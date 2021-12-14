@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  mcbedrock:
+    image: itzg/minecraft-bedrock-server
+    environment:
+      EULA: "true"
+      VERSION: latest
+      DIFFICULTY: normal
+    ports:
+            - 19132:19132
+            - 19132:19132/udp
+    volumes:
+      - ./mcdata/:/data
+
