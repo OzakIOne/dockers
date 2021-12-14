@@ -1,0 +1,24 @@
+version: '2'
+services:
+  wireguard:
+    image: ghcr.io/linuxserver/wireguard
+    container_name: wireguard
+    networks:
+      - wireguard_gateway
+    ports:
+      - 51820:51820/udp
+#      - 8080:8080/udp
+#      - 8080:51820/udp
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    env_file: .env
+#    sysctls:
+#      - net.ipv4.conf.all.src_valid_mark=1
+    volumes:
+      - ./config:/config
+      - ./data:/etc/wireguard
+#      - ./lib/modules:/lib/modules
+networks:
+  wireguard_gateway:
+    driver: bridge
