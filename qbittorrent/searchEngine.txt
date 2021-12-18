@@ -1,0 +1,5 @@
+https://gist.github.com/sa3dany/1478e311e6371a60e251e7bdfc2dda65/raw/6288d84627e23823427d03f7aca2f492aa0c8338/one337x.py
+https://raw.githubusercontent.com/nindogo/qbtSearchScripts/master/anidex.py
+https://raw.githubusercontent.com/MadeOfMagicAndWires/qBit-plugins/master/engines/nyaasi.py
+https://raw.githubusercontent.com/nbusseneau/qBittorrent-rutracker-plugin/master/rutracker.py
+https://raw.githubusercontent.com/gitDew/qbittorrent-snowfl-search-plugin/master/snowfl.py
