@@ -1,0 +1,18 @@
+version: '2.4'
+services:
+  emby:
+    image: emby/embyserver:4.5.0.13
+    env_file: .env
+    ports:
+      - 8096:8096 # To expose the HTTP port
+      - 8920:8920 # To expose the HTTPS port
+
+    volumes:
+      - ./config:/config
+      - /mnt/f:/mnt/F
+      - /mnt/g:/mnt/G
+  #    device:
+  #        -
+  #        -
+  #    --device /dev/dri:/dev/dri \ # To mount all render nodes for VAAPI/NVDEC/NVENC
+  #    --runtime=nvidia \ # To expose your NVIDIA GPU
