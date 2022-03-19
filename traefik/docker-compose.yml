@@ -1,0 +1,16 @@
+version: "3.3"
+
+services:
+  traefik:
+    image: "traefik:v2.6"
+    container_name: "traefik"
+    env_file: .env
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./config/traefik.toml:/etc/traefik/traefik.toml"
+      - "./config/hotreload/:/etc/traefik/hotreload"
