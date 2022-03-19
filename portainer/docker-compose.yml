@@ -1,0 +1,32 @@
+version: '2'
+services:
+  portainer:
+    image: portainer/portainer-ce
+
+#    hostname: "portainer"
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    env_file: .env
+
+    volumes:
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  portainer_debug_template:
+    image: portainer/portainer-ce
+#    hostname: "portainer_debug"
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+
+    env_file: .env
+
+    stdin_open: true
+    tty: true
+    entrypoint: /bin/sh
+    command: -s
+
+    volumes:
+      - ./data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
