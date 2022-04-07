@@ -1,15 +1,17 @@
-version: '3.8'
+version: '3.3'
 
 services:
   mcjava:
     image: itzg/minecraft-server
     environment:
       EULA: "true"
-      VERSION: 1.18.1
+      VERSION: 1.18.2
       DIFFICULTY: normal
-      # TYPE: PAPER
+      TYPE: SPIGOT
+      SPIGET_RESOURCES: 34315
+      MODS: "https://github.com/EssentialsX/Essentials/releases/download/2.19.4/EssentialsX-2.19.4.jar"
+      OPS: "ozakione"
     ports:
       - 25565:25565
     volumes:
       - ./mcdata/:/data
-
