@@ -11,7 +11,17 @@ services:
       SPIGET_RESOURCES: 34315
       MODS: "https://github.com/EssentialsX/Essentials/releases/download/2.19.4/EssentialsX-2.19.4.jar"
       OPS: "ozakione"
+      ONLINE_MODE: "false"
+      SERVER_NAME: "Chez ozaki"
+      ENABLE_AUTOPAUSE: "true"
+
+      # VIEW_DISTANCE: 10
+      # MAX_PLAYERS: 15
+      # WHITELIST: foo,bar,baz
+      # MODS_FILES: /extras/mods.txt
+      # WORLD: "https://www.minecraftmaps.com/survival-maps/cube-survival/download"
     ports:
       - 25565:25565
     volumes:
       - ./mcdata/:/data
+      # - ./mods.txt:/extras/mods.txt:ro
