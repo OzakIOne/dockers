@@ -1,0 +1,85 @@
+version: "2.1"
+services:
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    env_file: .env
+    volumes:
+      - ./config/qbittorrent/:/config
+      - ./data/:/data
+    ports:
+      - 8080:8080
+      - 6881:6881
+      - 6881:6881/udp
+    restart: unless-stopped
+
+  jackett:
+    # search engine
+    image: lscr.io/linuxserver/jackett:latest
+    container_name: jackett
+    env_file: .env
+    volumes:
+      - ./config/jackett/:/config
+      - ./data/:/data
+    ports:
+      - 9117:9117
+    restart: unless-stopped
+
+  sonarr:
+    # download TV
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    env_file: .env
+    volumes:
+      - ./config/sonarr/:/config
+      - ./data/:/data #optional
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+
+  sonarrv4:
+    image: hotio/sonarr:v4
+    container_name: sonarrv4
+    env_file: .env
+    volumes:
+      - ./config/sonarrv4:/config
+      - ./data:/data
+    ports:
+      - 8990:8989
+    restart: always
+
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    env_file: .env
+    volumes:
+      - ./config/jellyfin/:/config
+      # - ./media/tvseries/:/data/tvshows
+      - ./data/media/tv:/data/tvshows
+      - ./data/media/movies/:/data/movies
+    ports:
+      - 8096:8096
+      - 8920:8920 #optional
+      - 7359:7359/udp #optional
+      - 1900:1900/udp #optional
+    restart: unless-stopped
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:develop
+    container_name: prowlarr
+    env_file: .env
+    volumes:
+      - ./config/prowlarr:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    env_file: .env
+    ports:
+      - 5055:5055
+    volumes:
+      - ./config/jellyseerr:/app/config
+    restart: unless-stopped
