@@ -1,15 +1,20 @@
-version: "2"
+version: "3.9"
+
 services:
   homer:
     image: b4bz/homer
-    #To build from source, comment previous line and uncomment below
-    #build: .
     container_name: homer
-    volumes:
-      - ./assets/:/www/assets
-    ports:
-      - 80:8080
-    environment:
-     - UID=1000
-     - GID=1000
     restart: always
+    ports:
+      - 8081:8080
+    volumes:
+      - ./assets:/www/assets
+    environment:
+      - INIT_ASSETS=0
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge

@@ -1,0 +1,45 @@
+# WHOAMI
+http:
+  routers:
+    homer:
+      rule: "Host(`ozaki.one`) && Path(`/homer`)"
+      middlewares:
+        - homer-stripprefix
+      entryPoints:
+        - websecure
+      service: backend_homer
+      tls:
+        certResolver: "myresolver"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+    whoami:
+      rule: "Host(`ozaki.one`) && Path(`/whoami`)"
+      middlewares:
+        - whoami-stripprefix
+      entryPoints:
+        - websecure
+      service: backend_whoami
+      tls:
+        certResolver: "myresolver"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+  services:
+    backend_whoami:
+      loadBalancer:
+        servers:
+        - url: "http://whoami:80/"
+    backend_homer:
+      loadBalancer:
+        servers:
+        - url: "http://homer:8081/"
+  middlewares:
+    whoami-stripprefix:
+      replacePath:
+            path: "/whoami"
+    homer-stripprefix:
+      replacePath:
+            path: "/homer"

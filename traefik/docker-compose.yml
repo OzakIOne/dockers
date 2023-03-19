@@ -1,16 +1,23 @@
-version: "3.3"
+version: "3.9"
 
 services:
   traefik:
-    image: "traefik:v2.6"
-    container_name: "traefik"
-    env_file: .env
-    restart: always
+    image: traefik:v2.9
+    container_name: traefik
     ports:
       - "80:80"
-      - "443:443"
       - "8080:8080"
+      - "443:443"
     volumes:
+      - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
-      - "./config/traefik.toml:/etc/traefik/traefik.toml"
+      - "./config/traefik/traefik.yml:/traefik.yml:ro"
       - "./config/hotreload/:/etc/traefik/hotreload"
+
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge

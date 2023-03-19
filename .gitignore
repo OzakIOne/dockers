@@ -1,2 +1,4 @@
 # */*/
 traefik/.env
+jellyfin/config
+traefik/letsencrypt

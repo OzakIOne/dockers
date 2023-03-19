@@ -10,7 +10,7 @@ services:
       - WEBUI_PORT=8080
     volumes:
       - ./config/config:/config
-      - /home/pi/Downloads/:/downloads
+      - ~/Downloads/:/downloads
       - ~/QBWeb/vuetorrent/:/home/
     ports:
       - 6881:6881
