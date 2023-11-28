@@ -23,7 +23,6 @@ services:
     networks:
       - traefik
 
-
 networks:
   traefik:
     name: traefik

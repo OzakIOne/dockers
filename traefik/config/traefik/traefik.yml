@@ -37,7 +37,13 @@ certificatesResolvers:
       email: devozakione@gmail.com
       storage: /letsencrypt/acme.json
       caServer: "https://acme-v02.api.letsencrypt.org/directory"
-      tlsChallenge: {}
+      # tlsChallenge: {}
+      dnsChallenge:
+        provider: cloudflare
+        delayBeforeCheck: 10
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
 
 providers:
   docker:

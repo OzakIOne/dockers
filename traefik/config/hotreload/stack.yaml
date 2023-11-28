@@ -1,8 +1,17 @@
 # WHOAMI
 http:
   routers:
+    jelly:
+      rule: "Host(`j.ozaki.one`)"
+      service: backend_jelly
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
     homer:
-      rule: "Host(`ozaki.one`)"
+      rule: "Host(`h.ozaki.one`)"
       service: backend_homer
       tls:
         certResolver: "production"
@@ -41,3 +50,7 @@ http:
       loadBalancer:
         servers:
         - url: "http://homer:8080"
+    backend_jelly:
+      loadBalancer:
+        servers:
+        - url: "http://jellyfin:8096"
