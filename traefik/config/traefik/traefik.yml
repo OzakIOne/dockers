@@ -1,9 +1,7 @@
 global:
   checkNewVersion: true
-  sendAnonymousUsage: false  # true by default
+  sendAnonymousUsage: false
 
-# (Optional) Log information
-# ---
 log:
  level: DEBUG  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 #   format: common  # common, json, logfmt

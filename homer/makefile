@@ -1,4 +1,4 @@
 up:
-	docker compose -f docker-compose.yml run --service-ports -d homer
+	docker compose run -d homer
 down:
-	docker compose -f docker-compose.yml down -v
+	docker compose down -v

@@ -5,12 +5,18 @@ services:
     image: adguard/adguardhome:latest
     container_name: adguard 
     ports:
-      - '53:53/tcp'
-      - '53:53/udp'
-      - '67:67/udp'
-      - '853:853/tcp'
-      - '8081:80/tcp'
+      # - '53:53/tcp'
+      # - '53:53/udp'
+      # - '67:67/udp'
+      # - '853:853/tcp'
+      - '8085:80'
     volumes:
       - ./adguard/work:/opt/adguardhome/work
       - ./adguard/conf:/opt/adguardhome/conf
     restart: always
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+    external: true

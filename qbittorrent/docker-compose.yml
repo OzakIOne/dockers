@@ -7,13 +7,21 @@ services:
       - PUID=1000
       - PGID=1000
       - TZ=Europe/Paris
-      - WEBUI_PORT=8080
+# for 8090 set -p 8090:8090  WEBUI_PORT=8090
+      - WEBUI_PORT=8888
     volumes:
       - ./config/config:/config
-      - ~/Downloads/:/downloads
-      - ~/QBWeb/vuetorrent/:/home/
+      # - ~/Downloads/:/downloads
+      # - ~/QBWeb/vuetorrent/:/home/
     ports:
       - 6881:6881
       - 6881:6881/udp
-      - 8080:8080
+      - 8888:8888
     restart: always
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    external: true

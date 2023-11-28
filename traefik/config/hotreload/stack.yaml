@@ -2,44 +2,99 @@
 http:
   routers:
     homer:
-      rule: "Host(`ozaki.one`) && Path(`/homer`)"
-      middlewares:
-        - homer-stripprefix
-      entryPoints:
-        - websecure
+      rule: "Host(`ozaki.one`) && PathPrefix(`/homer`)"
+      middlewares: 
+        - home-stripprefix
+        - cors
       service: backend_homer
+      entryPoints:
+        - web
+        - websecure
       tls:
         certResolver: "myresolver"
         domains:
           - main: "ozaki.one"
-            sans:
-              - "*.ozaki.one"
-    whoami:
-      rule: "Host(`ozaki.one`) && Path(`/whoami`)"
-      middlewares:
-        - whoami-stripprefix
+            # sans:
+            #   - "*.ozaki.one"
+    dashy:
+      rule: "Host(`ozaki.one`) && PathPrefix(`/dashy`)"
+      # middlewares: 
+      #   - home-stripprefix
+      service: backend_dashy
       entryPoints:
+        - web
         - websecure
+      tls:
+        certResolver: "myresolver"
+        domains:
+          - main: "ozaki.one"
+            # sans:
+            #   - "*.ozaki.one"
+    whoami:
+      rule: "Host(`ozaki.one`) && PathPrefix(`/whoami`)"
+      middlewares: home-stripprefix
       service: backend_whoami
       tls:
         certResolver: "myresolver"
         domains:
           - main: "ozaki.one"
-            sans:
-              - "*.ozaki.one"
+            # sans:
+            #   - "*.ozaki.one"
+    qbittorrent:
+      rule: "Host(`ozaki.one`) && PathPrefix(`/qbittorrent`)"
+      middlewares: 
+        - home-stripprefix
+        - set-mime-types
+      service: backend_qbittorrent
+      tls:
+        certResolver: "myresolver"
+        domains:
+          - main: "ozaki.one"
+            # sans:
+            #   - "*.ozaki.one"
   services:
     backend_whoami:
       loadBalancer:
         servers:
-        - url: "http://whoami:80/"
+        - url: "http://whoami/"
+          port: 80
     backend_homer:
       loadBalancer:
         servers:
-        - url: "http://homer:8081/"
+        - url: "http://homer:8080/"
+    backend_dashy:
+      loadBalancer:
+        servers:
+        - url: "http://dashy/"
+    backend_qbittorrent:
+      loadBalancer:
+        servers:
+        - url: "http://qbittorrent:8888"
+          
   middlewares:
-    whoami-stripprefix:
+    home-stripprefix:
       replacePath:
-            path: "/whoami"
-    homer-stripprefix:
-      replacePath:
-            path: "/homer"
+            path: "/"
+    set-mime-types:
+      headers:
+        customRequestHeaders:
+          Content-Type:
+            regex: ".+\\.css$|.+\\.js$"
+            value: "text/css; charset=utf-8"
+        customResponseHeaders:
+          Content-Type:
+            regex: ".+\\.css$|.+\\.js$"
+            value: "text/css; charset=utf-8"
+
+    cors:
+      headers:
+        accessControlAllowOriginList:
+          - "https://ozaki.one"
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - PUT
+        accessControlAllowHeaders: ["x-api-key, Origin, Authorization"]
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 100
+        addVaryHeader: true

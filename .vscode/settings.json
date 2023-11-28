@@ -1,0 +1,14 @@
+{
+  "sshfs.configs": [
+    {
+      "name": "oracle",
+      "host": "141.145.221.71",
+      "root": "/home/ubuntu",
+      "username": "ubuntu",
+      "privateKeyPath": "$HOME/.ssh/id_ozaki",
+      "extend": [
+        "testconfig"
+      ]
+    }
+  ]
+}

@@ -8,8 +8,14 @@ services:
         ports:
             - 8024:8080
         volumes:
-            - /mnt/f:/data
+            # - /mnt/f:/data
             - ./config/:/config
         environment:
             - FB_BASEURL=/filebrowser
         restart: always
+
+networks:
+  traefik:
+    name: traefik
+    driver: bridge
+    external: true
