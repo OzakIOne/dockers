@@ -6,18 +6,17 @@ services:
     container_name: traefik
     ports:
       - "80:80"
-      - "9090:8080"
+      - "8080:8080"
       - "443:443"
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./config/traefik/traefik.yml:/traefik.yml:ro"
       - "./config/hotreload/:/etc/traefik/hotreload"
-
     networks:
       - traefik
 
 networks:
   traefik:
     name: traefik
-    driver: bridge
+    external: true
