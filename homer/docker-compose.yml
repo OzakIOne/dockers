@@ -5,8 +5,8 @@ services:
     image: b4bz/homer
     container_name: homer
     restart: always
-    ports:
-      - 8084:8080
+    # ports:
+    #   - 8084:8080
     volumes:
       - ./assets:/www/assets
     environment:

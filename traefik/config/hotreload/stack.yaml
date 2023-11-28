@@ -1,16 +1,33 @@
 # WHOAMI
 http:
   routers:
+    homer:
+      rule: "Host(`ozaki.one`)"
+      service: backend_homer
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
     whoami:
       rule: "Host(`w.ozaki.one`)"
       service: backend_whoami
       tls:
         certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
     qbittorrent:
       rule: "Host(`q.ozaki.one`)"
       service: backend_qbittorrent
       tls:
         certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
   services:
     backend_whoami:
       loadBalancer:
@@ -20,3 +37,7 @@ http:
       loadBalancer:
         servers:
         - url: "http://qbittorrent:8888"
+    backend_homer:
+      loadBalancer:
+        servers:
+        - url: "http://homer:8080"
