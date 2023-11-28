@@ -11,7 +11,8 @@ services:
       - WEBUI_PORT=8888
     volumes:
       - ./config/config:/config
-      # - ~/Downloads/:/downloads
+      - ../jellyfin/dl/movies:/downloads/movies
+      - ../jellyfin/dl/tvshows:/downloads/tvshows
       # - ~/QBWeb/vuetorrent/:/home/
     ports:
       - 6881:6881
