@@ -5,20 +5,12 @@ http:
       rule: "Host(`w.ozaki.one`)"
       service: backend_whoami
       tls:
-        certResolver: "myresolver"
-        domains:
-          - main: "ozaki.one"
-            sans:
-              - "*.ozaki.one"
+        certResolver: "production"
     qbittorrent:
       rule: "Host(`q.ozaki.one`)"
       service: backend_qbittorrent
       tls:
-        certResolver: "myresolver"
-        domains:
-          - main: "ozaki.one"
-            sans:
-              - "*.ozaki.one"
+        certResolver: "production"
   services:
     backend_whoami:
       loadBalancer:

@@ -14,31 +14,30 @@ api:
 entryPoints:
   web:
     address: :80
-    # (Optional) Redirect to HTTPS
-    # ---
     http:
       redirections:
         entryPoint:
           to: websecure
           scheme: https
-
   websecure:
     address: :443
 
-certificatesResolvers:
-  myresolver:
-    acme:
-      email: devozakione@gmail.com
-      storage: /letsencrypt/acme.json
-      caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
-      tlsChallenge: {}
 
-  # production:
+
+certificatesResolvers:
+  # myresolver:
   #   acme:
   #     email: devozakione@gmail.com
   #     storage: /letsencrypt/acme.json
-  #     caServer: "https://acme-v02.api.letsencrypt.org/directory"
+  #     caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
   #     tlsChallenge: {}
+
+  production:
+    acme:
+      email: devozakione@gmail.com
+      storage: /letsencrypt/acme.json
+      caServer: "https://acme-v02.api.letsencrypt.org/directory"
+      tlsChallenge: {}
 
 providers:
   docker:
