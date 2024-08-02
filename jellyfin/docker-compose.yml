@@ -1,7 +1,6 @@
-version: "2.1"
 services:
   jellyfin:
-    image: lscr.io/linuxserver/jellyfin
+    image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
     environment:
       - PUID=1000
@@ -9,8 +8,10 @@ services:
       - TZ=Europe/London
     volumes:
       - ./config:/config
-      - ./dl/tvseries:/data/tvshows
+      - ./dl/tvshows:/data/tvshows
       - ./dl/movies:/data/movies
+      - ./dl/music:/data/music
+      - ./dl/books:/data/books
     ports:
       - 8096:8096
       - 8920:8920 #optional

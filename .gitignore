@@ -3,5 +3,6 @@ traefik/.env
 jellyfin/config
 jellyfin/dl
 traefik/letsencrypt
-nginxproxymanager/data
+adguardhome/adguard
 qbittorrent/config
+nginxproxymanager/data
