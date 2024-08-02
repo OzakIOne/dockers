@@ -37,20 +37,33 @@ http:
           - main: "ozaki.one"
             sans:
               - "*.ozaki.one"
+    portainer:
+      rule: "Host(`p.ozaki.one`)"
+      service: backend_portainer
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
   services:
     backend_whoami:
       loadBalancer:
         servers:
-        - url: "http://whoami:80/"
+          - url: "http://whoami:80/"
     backend_qbittorrent:
       loadBalancer:
         servers:
-        - url: "http://qbittorrent:8888"
+          - url: "http://qbittorrent:8888"
     backend_homer:
       loadBalancer:
         servers:
-        - url: "http://homer:8080"
+          - url: "http://homer:8080"
     backend_jelly:
       loadBalancer:
         servers:
-        - url: "http://jellyfin:8096"
+          - url: "http://jellyfin:8096"
+    backend_portainer:
+      loadBalancer:
+        servers:
+          - url: "http://portainer:8000"

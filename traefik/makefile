@@ -1,4 +1,4 @@
 up:
-	docker compose -f docker-compose.yml -d traefik
+	docker compose -d traefik
 down:
-	docker compose -f docker-compose.yml down
+	docker compose down

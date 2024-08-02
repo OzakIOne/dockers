@@ -1,4 +1,4 @@
 up:
-	docker-compose -f docker-compose.yml run --service-ports -d jellyfin
+	docker-compose run -d jellyfin
 down:
-	docker-compose -f docker-compose.yml down -v
+	docker-compose down -v
