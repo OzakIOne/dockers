@@ -2,3 +2,6 @@
 traefik/.env
 jellyfin/config
 traefik/letsencrypt
+adguardhome/adguard
+nginxproxymanager/data
+qbittorrent/config
