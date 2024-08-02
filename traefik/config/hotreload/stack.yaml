@@ -66,4 +66,4 @@ http:
     backend_portainer:
       loadBalancer:
         servers:
-          - url: "http://portainer:8000"
+          - url: "http://portainer:9000"

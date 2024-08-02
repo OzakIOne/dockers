@@ -1,5 +1,5 @@
 up:
-	docker compose run --service-ports -d emby
+	docker compose up -d emby
 # 	--service-ports binding sur la stack de ton ethernet oclahsot et 0.0.0.0.0
 down:
 	docker compose down -v

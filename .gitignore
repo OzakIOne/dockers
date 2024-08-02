@@ -6,3 +6,4 @@ traefik/letsencrypt
 adguardhome/adguard
 qbittorrent/config
 nginxproxymanager/data
+portainer/data

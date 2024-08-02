@@ -1,4 +1,4 @@
 up:
-	docker compose run --service-ports -d filebrowser
+	docker compose up -d filebrowser
 down:
 	docker compose down -v

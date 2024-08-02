@@ -1,4 +1,4 @@
 up:
-	docker compose -d traefik
+	docker compose up -d traefik
 down:
-	docker compose down
+	docker compose down -v

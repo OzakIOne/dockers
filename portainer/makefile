@@ -1,4 +1,4 @@
 up:
-	docker-compose run --service-ports -d portainer
+	docker-compose up -d portainer
 down:
 	docker-compose down

@@ -1,4 +1,4 @@
-version: "3"
+version: "3.9"
 services:
   jellyfin:
     image: lscr.io/linuxserver/jellyfin:latest
@@ -6,7 +6,7 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/London
+      - TZ=Europe/Paris
     volumes:
       - ./config:/config
       - ./dl/tvshows:/data/tvshows

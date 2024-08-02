@@ -1,5 +1,5 @@
 up:
-	docker compose run --service-ports -d wireguard
+	docker compose up -d wireguard
 down:
 	docker compose down -v
 

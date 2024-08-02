@@ -1,5 +1,5 @@
 up:
-	docker compose run --service-ports -d hbbs
+	docker compose up -d hbbs
 down:
 	docker compose down -v
 

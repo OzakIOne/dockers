@@ -1,4 +1,4 @@
 up:
-	docker compose run --service-ports -d nginxproxymanager
+	docker compose up -d nginxproxymanager
 down:
 	docker compose down -v

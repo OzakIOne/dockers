@@ -1,4 +1,4 @@
 up:
-	docker-compose run -d jellyfin
+	docker-compose up -d jellyfin
 down:
 	docker-compose down -v

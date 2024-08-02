@@ -1,5 +1,5 @@
 up:
-	docker-compose run --service-ports -d mcbedrock
+	docker compose up -d mcbedrock
 down:
 	docker-compose down -v
 

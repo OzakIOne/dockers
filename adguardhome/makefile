@@ -1,4 +1,4 @@
 up:
-	docker compose run --service-ports -d adguard
+	docker compose up -d adguard
 down:
 	docker compose down -v

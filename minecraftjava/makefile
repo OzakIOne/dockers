@@ -1,5 +1,5 @@
 up:
-	docker compose run --service-ports -d mcjava
+	docker compose up -d mcjava
 down:
 	docker compose down -v
 

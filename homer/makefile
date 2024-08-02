@@ -1,4 +1,4 @@
 up:
-	docker compose run -d homer
+	docker compose up -d homer
 down:
 	docker compose down -v
