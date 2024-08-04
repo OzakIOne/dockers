@@ -1,0 +1,26 @@
+services:
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    volumes:
+      - ./config/data:/config
+      # Folder containing movies
+      - ../jellyfin/data/media/tvshows/:/data/tvshows
+      # Folder containing torrents
+      # - ../jellyfin/data/torrent/tvshows:/downloads
+      - ../jellyfin/data/torrent/downloads:/data/downloads
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    name: traefik
+    external: true
+

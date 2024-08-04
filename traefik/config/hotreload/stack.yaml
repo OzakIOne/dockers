@@ -10,6 +10,42 @@ http:
           - main: "ozaki.one"
             sans:
               - "*.ozaki.one"
+    jellyseerr:
+      rule: "Host(`js.ozaki.one`)"
+      service: backend_jellyseerr
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+    radarr:
+      rule: "Host(`radarr.ozaki.one`)"
+      service: backend_radarr
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+    sonarr:
+      rule: "Host(`sonarr.ozaki.one`)"
+      service: backend_sonarr
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+    prowlarr:
+      rule: "Host(`prowlarr.ozaki.one`)"
+      service: backend_prowlarr
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
     homer:
       rule: "Host(`h.ozaki.one`)"
       service: backend_homer
@@ -31,6 +67,15 @@ http:
     qbittorrent:
       rule: "Host(`q.ozaki.one`)"
       service: backend_qbittorrent
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+    deluge:
+      rule: "Host(`d.ozaki.one`)"
+      service: backend_deluge
       tls:
         certResolver: "production"
         domains:
@@ -63,7 +108,27 @@ http:
       loadBalancer:
         servers:
           - url: "http://jellyfin:8096"
+    backend_jellyseerr:
+      loadBalancer:
+        servers:
+          - url: "http://jellyseerr:5055"
+    backend_radarr:
+      loadBalancer:
+        servers:
+          - url: "http://radarr:7878"
+    backend_sonarr:
+      loadBalancer:
+        servers:
+          - url: "http://sonarr:8989"
+    backend_prowlarr:
+      loadBalancer:
+        servers:
+          - url: "http://prowlarr:9696"
     backend_portainer:
       loadBalancer:
         servers:
           - url: "http://portainer:9000"
+    backend_deluge:
+      loadBalancer:
+        servers:
+          - url: "http://deluge:8112"

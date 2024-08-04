@@ -1,4 +1,4 @@
 up:
-	docker compose run -d qbittorrent
+	docker compose up -d qbittorrent
 down:
 	docker compose down -v

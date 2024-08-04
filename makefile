@@ -1,3 +1,6 @@
+init:
+	docker network create traefik
+
 traefikup:
 	docker compose -f ./traefik/docker-compose.yml up -d
 

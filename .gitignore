@@ -1,9 +1,15 @@
-# */*/
+*/config/
+!traefik/config
+# jellyfin/config
+# qbittorrent/config
+# deluge/config
+# radarr/config
+# jellyseerr/config
+# prowlarr/config
+*/data
+# jellyfin/data
+# nginxproxymanager/data
+# portainer/data
 traefik/.env
-jellyfin/config
-jellyfin/dl
 traefik/letsencrypt
 adguardhome/adguard
-qbittorrent/config
-nginxproxymanager/data
-portainer/data

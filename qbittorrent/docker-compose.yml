@@ -10,16 +10,27 @@ services:
 # for 8090 set -p 8090:8090  WEBUI_PORT=8090
       - WEBUI_PORT=8888
     volumes:
-      - ./config/config:/config
-      - ../jellyfin/dl/movies:/downloads/movies
-      - ../jellyfin/dl/tvshows:/downloads/tvshows
+      - ./config:/config
+
+      # Sahan config
+      - ../jellyfin/data/torrent/downloads:/data/downloads
+      # contains .torrent which auto DL in /data
+      - ../jellyfin/data/torrent/torrents:/data/torrents
+      # download files in /data and then move to /downloads
+      - ../jellyfin/data:/data
+      
+
+      # - ../jellyfin/data/torrent/movies:/downloads/movies
+      # - ../jellyfin/data/torrent/tvshows:/downloads/tvshows
+      # - ../jellyfin/data/torrent/books:/downloads/books
+      # - ../jellyfin/data/torrent/music:/downloads/music
       # - ~/QBWeb/vuetorrent/:/home/
     ports:
       - 6881:6881
       - 6881:6881/udp
-      # - 8888:8888
-    expose:
-      - 8888
+      - 8888:8888
+    # expose:
+      # - 8888
     restart: always
     networks:
       - traefik
