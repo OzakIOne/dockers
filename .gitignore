@@ -1,5 +1,7 @@
 */config/
 !traefik/config
+traefik/.env
+traefik/letsencrypt
 # jellyfin/config
 # qbittorrent/config
 # deluge/config
@@ -10,6 +12,3 @@
 # jellyfin/data
 # nginxproxymanager/data
 # portainer/data
-traefik/.env
-traefik/letsencrypt
-adguardhome/adguard
