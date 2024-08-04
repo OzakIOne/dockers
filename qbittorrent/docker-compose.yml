@@ -13,6 +13,7 @@ services:
       - ./config:/config
 
       # Sahan config
+      # contains final files completed
       - ../jellyfin/data/torrent/downloads:/data/downloads
       # contains .torrent which auto DL in /data
       - ../jellyfin/data/torrent/torrents:/data/torrents
