@@ -3,11 +3,11 @@ global:
   sendAnonymousUsage: false
 
 log:
- level: DEBUG  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: DEBUG # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 api:
- dashboard: true  # true by default
- insecure: false  # Don't do this in production!
+  dashboard: true # true by default
+  insecure: false # Don't do this in production!
 
 # Entry Points configuration
 # ---
@@ -21,8 +21,6 @@ entryPoints:
           scheme: https
   websecure:
     address: :443
-
-
 
 certificatesResolvers:
   # myresolver:
@@ -40,14 +38,14 @@ certificatesResolvers:
       # tlsChallenge: {}
       dnsChallenge:
         provider: cloudflare
-        delayBeforeCheck: 10
+        delayBeforeCheck: "10"
         resolvers:
           - "1.1.1.1:53"
           - "1.0.0.1:53"
 
 providers:
   docker:
-    exposedByDefault: false  # Default is true
+    exposedByDefault: false # Default is true
     watch: true
   file:
     # watch for dynamic configuration changes

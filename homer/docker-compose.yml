@@ -1,10 +1,8 @@
-version: "3.9"
-
+name: homer
 services:
   homer:
     image: b4bz/homer
     container_name: homer
-    restart: always
     # ports:
     #   - 8084:8080
     volumes:
@@ -13,6 +11,7 @@ services:
       - INIT_ASSETS=0
     networks:
       - traefik
+    restart: always
 
 networks:
   traefik:

@@ -1,5 +1,4 @@
-version: "3.9"
-
+name: whoami
 services:
   whoami:
     image: "traefik/whoami"

@@ -1,0 +1,27 @@
+name: authelia
+services:
+  authelia:
+    image: 'authelia/authelia:latest'
+    container_name: 'authelia'
+    volumes:
+      - ./config:/config
+      - ./secrets:/secrets:ro
+      - ./logs:/var/log/authelia/
+    environment:
+      TZ: 'America/Los_Angeles'
+      X_AUTHELIA_CONFIG_FILTERS: 'template'
+    networks:
+      - traefik
+    restart: 'unless-stopped'
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: 'traefik'
+      traefik.http.routers.authelia.rule: 'Host(`auth.ozaki.one`)'
+      traefik.http.routers.authelia.entrypoints: 'websecure'
+      traefik.http.routers.authelia.tls: 'true'
+      traefik.http.routers.authelia.tls.certResolver: 'production'
+
+networks:
+  traefik:
+    external: true
+    name: traefik

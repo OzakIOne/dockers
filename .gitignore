@@ -1,4 +1,5 @@
 */config/
+*/data/config/
 !traefik/config
 traefik/.env
 traefik/letsencrypt
@@ -8,6 +9,7 @@ traefik/letsencrypt
 # radarr/config
 # jellyseerr/config
 # prowlarr/config
+authelia/secrets/
 */data
 # jellyfin/data
 # nginxproxymanager/data

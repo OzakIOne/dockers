@@ -1,15 +1,15 @@
-version: '2'
+name: portainer
 services:
   portainer:
     image: portainer/portainer-ce
-#    hostname: "portainer"
-    ports:
-      - "9000:9000"
-      - "8000:8000"
-    env_file: .env
     volumes:
       - ./data:/data
       - /var/run/docker.sock:/var/run/docker.sock
+    env_file: .env
+    #    hostname: "portainer"
+    ports:
+      - '8000:8000'
+      - '9000:9000'
     networks:
       - traefik
 

@@ -1,0 +1,21 @@
+name: dockhand
+services:
+  dockhand:
+    image: fnsys/dockhand:latest
+    container_name: dockhand
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - dockhand_data:/app/data
+    ports:
+      - '3000:3000'
+    restart: unless-stopped
+    networks:
+      - traefik
+
+volumes:
+  dockhand_data:
+
+networks:
+  traefik:
+    external: true
+    name: traefik

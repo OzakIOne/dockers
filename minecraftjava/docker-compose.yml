@@ -1,8 +1,10 @@
-version: '3.3'
-
+name: minecraftjava
 services:
   mcjava:
     image: itzg/minecraft-server
+    volumes:
+      - ./mcdata/:/data
+      # - ./mods.txt:/extras/mods.txt:ro
     environment:
       EULA: "true"
       VERSION: 1.18.2
@@ -14,14 +16,10 @@ services:
       ONLINE_MODE: "false"
       SERVER_NAME: "Chez ozaki"
       ENABLE_AUTOPAUSE: "true"
-
       # VIEW_DISTANCE: 10
       # MAX_PLAYERS: 15
       # WHITELIST: foo,bar,baz
       # MODS_FILES: /extras/mods.txt
       # WORLD: "https://www.minecraftmaps.com/survival-maps/cube-survival/download"
     ports:
-      - 25565:25565
-    volumes:
-      - ./mcdata/:/data
-      # - ./mods.txt:/extras/mods.txt:ro
+      - '25565:25565'

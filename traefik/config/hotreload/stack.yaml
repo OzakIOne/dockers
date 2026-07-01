@@ -1,5 +1,25 @@
-# WHOAMI
 http:
+  middlewares:
+    authelia:
+      forwardAuth:
+        address: 'http://authelia:9091/api/authz/forward-auth'
+        trustForwardHeader: true
+        maxResponseBodySize: 8192
+        authResponseHeaders:
+          - 'Remote-User'
+          - 'Remote-Groups'
+          - 'Remote-Email'
+          - 'Remote-Name'
+    authelia-basic:
+      forwardAuth:
+        address: 'http://authelia:9091/api/authz/forward-auth?auth=basic'
+        trustForwardHeader: true
+        maxResponseBodySize: 8192
+        authResponseHeaders:
+          - 'Remote-User'
+          - 'Remote-Groups'
+          - 'Remote-Email'
+          - 'Remote-Name'
   routers:
     jelly:
       rule: "Host(`j.ozaki.one`)"
@@ -55,9 +75,29 @@ http:
           - main: "ozaki.one"
             sans:
               - "*.ozaki.one"
+    authelia:
+      rule: "Host(`auth.ozaki.one`)"
+      service: backend_authelia
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
     whoami:
       rule: "Host(`w.ozaki.one`)"
       service: backend_whoami
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
+    whoami-secure:
+      rule: "Host(`ws.ozaki.one`)"
+      service: backend_whoami
+      middlewares:
+        - "authelia@file"
       tls:
         certResolver: "production"
         domains:
@@ -82,6 +122,15 @@ http:
           - main: "ozaki.one"
             sans:
               - "*.ozaki.one"
+    dockhand:
+      rule: "Host(`dh.ozaki.one`)"
+      service: backend_dockhand
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "ozaki.one"
+            sans:
+              - "*.ozaki.one"
     portainer:
       rule: "Host(`p.ozaki.one`)"
       service: backend_portainer
@@ -92,6 +141,10 @@ http:
             sans:
               - "*.ozaki.one"
   services:
+    backend_authelia:
+      loadBalancer:
+        servers:
+          - url: "http://authelia:9091"
     backend_whoami:
       loadBalancer:
         servers:
@@ -132,3 +185,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://deluge:8112"
+    backend_dockhand:
+      loadBalancer:
+        servers:
+          - url: "http://dockhand:3000"

@@ -1,18 +1,17 @@
-version: "3"
-
+name: filebrowser
 services:
-    filebrowser:
-        image: hurlenko/filebrowser
-        user: "${UID}:${GID}"
-        # env_file: .env
-        ports:
-            - 8024:8080
-        volumes:
-            # - /mnt/f:/data
-            - ./config/:/config
-        environment:
-            - FB_BASEURL=/filebrowser
-        restart: always
+  filebrowser:
+    image: hurlenko/filebrowser
+    volumes:
+      # - /mnt/f:/data
+      - ./data/config/:/config
+    environment:
+      - FB_BASEURL=/filebrowser
+    # env_file: .env
+    ports:
+      - '8024:8080'
+    restart: always
+    user: "${UID}:${GID}"
 
 networks:
   traefik:

@@ -1,24 +1,41 @@
-version: '2'
+name: wireguard
 services:
-  wireguard:
-    image: ghcr.io/linuxserver/wireguard
-    container_name: wireguard
-    networks:
-      - wireguard_gateway
+  #      - ./lib/modules:/lib/modules
+
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15
+    container_name: wg-easy
+    volumes:
+      - etc_wireguard:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
     ports:
-      - 51820:51820/udp
-#      - 8080:8080/udp
-#      - 8080:51820/udp
+      - "51820:51820/udp"
+      - "51821:51821/tcp"
+    networks:
+      wg:
+        ipv4_address: 10.42.42.42
+        ipv6_address: fdcc:ad94:bacf:61a3::2a
+    restart: unless-stopped
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
-    env_file: .env
-#    sysctls:
-#      - net.ipv4.conf.all.src_valid_mark=1
-    volumes:
-      - ./config:/config
-      - ./data:/etc/wireguard
-#      - ./lib/modules:/lib/modules
+      # - NET_RAW # ⚠️ Uncomment if using Podman
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv6.conf.all.disable_ipv6=0
+      - net.ipv6.conf.all.forwarding=1
+      - net.ipv6.conf.default.forwarding=1
+
 networks:
-  wireguard_gateway:
+  wg:
     driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.42.42.0/24
+        - subnet: fdcc:ad94:bacf:61a3::/64
+
+volumes:
+  etc_wireguard:

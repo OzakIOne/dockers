@@ -1,11 +1,8 @@
+name: radarr
 services:
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/Paris
     volumes:
       - ./config/data:/config
       # Folder containing movies
@@ -13,11 +10,15 @@ services:
       # Folder containing torrents
       # - ../jellyfin/data/torrent/movies:/downloads
       - ../jellyfin/data/torrent/downloads:/data/downloads
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
     ports:
-      - 7878:7878
-    restart: unless-stopped
+      - '7878:7878'
     networks:
       - traefik
+    restart: unless-stopped
 
 networks:
   traefik:
