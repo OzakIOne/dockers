@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "references": {
+    "effect": {
+      "repository": "github.com/Servarr/Wiki",
+      "description": "use this whenever there's a question about or how to setup arr service to setup with docker"
+    },
+    "effect-accountability": {
+      "repository": "github.com/Luctia/ezarr",
+      "description": "use this to see how to setup arr service with docker"
+    }
+  },
+  "lsp": false
+}

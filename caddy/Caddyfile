@@ -1,4 +1,4 @@
-ozaki.one {
+home.ozaki.one {
     reverse_proxy /qbittorrent qbittorrent:8888 {
         header_up Host {host}
         header_up X-Real-IP {remote}

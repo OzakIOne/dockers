@@ -22,124 +22,151 @@ http:
           - 'Remote-Name'
   routers:
     jelly:
-      rule: "Host(`j.ozaki.one`)"
+      rule: "Host(`j.home.ozaki.one`)"
       service: backend_jelly
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     jellyseerr:
-      rule: "Host(`js.ozaki.one`)"
+      rule: "Host(`js.home.ozaki.one`)"
       service: backend_jellyseerr
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     radarr:
-      rule: "Host(`radarr.ozaki.one`)"
+      rule: "Host(`radarr.home.ozaki.one`)"
       service: backend_radarr
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     sonarr:
-      rule: "Host(`sonarr.ozaki.one`)"
+      rule: "Host(`sonarr.home.ozaki.one`)"
       service: backend_sonarr
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     prowlarr:
-      rule: "Host(`prowlarr.ozaki.one`)"
+      rule: "Host(`prowlarr.home.ozaki.one`)"
       service: backend_prowlarr
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
+    bazarr:
+      rule: "Host(`bazarr.home.ozaki.one`)"
+      service: backend_bazarr
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "home.ozaki.one"
+            sans:
+              - "*.home.ozaki.one"
+    jackett:
+      rule: "Host(`ja.home.ozaki.one`)"
+      service: backend_jackett
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "home.ozaki.one"
+            sans:
+              - "*.home.ozaki.one"
     homer:
-      rule: "Host(`h.ozaki.one`)"
+      rule: "Host(`h.home.ozaki.one`)"
       service: backend_homer
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     authelia:
-      rule: "Host(`auth.ozaki.one`)"
+      rule: "Host(`auth.home.ozaki.one`)"
       service: backend_authelia
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     whoami:
-      rule: "Host(`w.ozaki.one`)"
+      rule: "Host(`w.home.ozaki.one`)"
       service: backend_whoami
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     whoami-secure:
-      rule: "Host(`ws.ozaki.one`)"
+      rule: "Host(`ws.home.ozaki.one`)"
       service: backend_whoami
       middlewares:
         - "authelia@file"
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     qbittorrent:
-      rule: "Host(`q.ozaki.one`)"
+      rule: "Host(`q.home.ozaki.one`)"
       service: backend_qbittorrent
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     deluge:
-      rule: "Host(`d.ozaki.one`)"
+      rule: "Host(`d.home.ozaki.one`)"
       service: backend_deluge
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     dockhand:
-      rule: "Host(`dh.ozaki.one`)"
+      rule: "Host(`dh.home.ozaki.one`)"
       service: backend_dockhand
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
     portainer:
-      rule: "Host(`p.ozaki.one`)"
+      rule: "Host(`p.home.ozaki.one`)"
       service: backend_portainer
       tls:
         certResolver: "production"
         domains:
-          - main: "ozaki.one"
+          - main: "home.ozaki.one"
             sans:
-              - "*.ozaki.one"
+              - "*.home.ozaki.one"
+    homarr:
+      rule: "Host(`ha.home.ozaki.one`)"
+      service: backend_homarr
+      tls:
+        certResolver: "production"
+        domains:
+          - main: "home.ozaki.one"
+            sans:
+              - "*.home.ozaki.one"
   services:
     backend_authelia:
       loadBalancer:
@@ -164,7 +191,7 @@ http:
     backend_jellyseerr:
       loadBalancer:
         servers:
-          - url: "http://jellyseerr:5055"
+          - url: "http://seerr:5055"
     backend_radarr:
       loadBalancer:
         servers:
@@ -189,3 +216,15 @@ http:
       loadBalancer:
         servers:
           - url: "http://dockhand:3000"
+    backend_homarr:
+      loadBalancer:
+        servers:
+          - url: "http://homarr:7575"
+    backend_bazarr:
+      loadBalancer:
+        servers:
+          - url: "http://bazarr:6767"
+    backend_jackett:
+      loadBalancer:
+        servers:
+          - url: "http://jackett:9117"
