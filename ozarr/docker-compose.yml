@@ -10,10 +10,10 @@ services:
       - ./config/jellyfin:/config
       - ./data/media:/data/media
     ports:
-      - '1900:1900/udp'
-      - '7359:7359/udp'
-      - '8096:8096'
-      - '8920:8920'
+      - "1900:1900/udp"
+      - "7359:7359/udp"
+      - "8096:8096"
+      - "8920:8920"
     networks:
       - traefik
     restart: unless-stopped
@@ -30,9 +30,9 @@ services:
       - ./config/qbittorrent:/config
       - ./data/torrents:/data/torrents
     ports:
-      - '6881:6881'
-      - '6881:6881/udp'
-      - '8888:8888'
+      - "6881:6881"
+      - "6881:6881/udp"
+      - "8888:8888"
     networks:
       - traefik
     restart: unless-stopped
@@ -47,7 +47,7 @@ services:
       - ./config/sonarr:/config
       - ./data:/data
     ports:
-      - '8989:8989'
+      - "8989:8989"
     networks:
       - traefik
     restart: unless-stopped
@@ -62,7 +62,7 @@ services:
       - ./config/radarr:/config
       - ./data:/data
     ports:
-      - '7878:7878'
+      - "7878:7878"
     networks:
       - traefik
     restart: unless-stopped
@@ -77,7 +77,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./config/homarr:/appdata
     ports:
-      - '7575:7575'
+      - "7575:7575"
     networks:
       - traefik
     restart: unless-stopped
@@ -92,7 +92,7 @@ services:
     volumes:
       - ./config/seerr:/app/config
     ports:
-      - '5055:5055'
+      - "5055:5055"
     networks:
       - traefik
     restart: unless-stopped
@@ -107,7 +107,7 @@ services:
       - ./config/bazarr:/config
       - ./data/media:/data/media
     ports:
-      - '6767:6767'
+      - "6767:6767"
     networks:
       - traefik
     restart: unless-stopped
@@ -121,7 +121,7 @@ services:
     volumes:
       - ./config/prowlarr:/config
     ports:
-      - '9696:9696'
+      - "9696:9696"
     networks:
       - traefik
     restart: unless-stopped
@@ -133,7 +133,7 @@ services:
     volumes:
       - ./config/flaresolverr:/config
     ports:
-      - '8191:8191'
+      - "8191:8191"
     networks:
       - traefik
     restart: unless-stopped
@@ -147,7 +147,20 @@ services:
     volumes:
       - ./config/jackett:/config
     ports:
-      - '9117:9117'
+      - "9117:9117"
+    networks:
+      - traefik
+    restart: unless-stopped
+
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:latest
+    container_name: recyclarr
+    env_file: .env
+    environment:
+      - TZ=${TZ}
+    user: "${PUID}:${PGID}"
+    volumes:
+      - ./config/recyclarr:/config
     networks:
       - traefik
     restart: unless-stopped

@@ -1,16 +1,9 @@
 */config/
 */data/config/
-!traefik/config
-traefik/.env
-traefik/letsencrypt
-# jellyfin/config
-# qbittorrent/config
-# deluge/config
-# radarr/config
-# jellyseerr/config
-# prowlarr/config
-authelia/secrets/
 */data
-# jellyfin/data
-# nginxproxymanager/data
-# portainer/data
+!traefik/config
+traefik/letsencrypt
+authelia/secrets/
+
+.env
+node_modules/
