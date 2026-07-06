@@ -11,7 +11,6 @@ import { FetchHttpClient } from "effect/unstable/http";
 import { BunServices, BunRuntime } from "@effect/platform-bun";
 import { QBittorrentClient } from "tsarr/qbittorrent";
 import { SeerrClient } from "tsarr/seerr";
-import { Seerr } from "tsarr";
 import {
   extractHostPort,
   readEnv,
@@ -33,6 +32,15 @@ import {
 
 const QB_USER = "admin";
 const DEBUG = Bun.env.DEBUG === "true" || Bun.env.LOG_LEVEL === "DEBUG";
+
+const TARGET_SERVICE = (() => {
+  const idx = Bun.argv.indexOf("--service");
+  if (idx >= 0 && idx + 1 < Bun.argv.length) return Bun.argv[idx + 1].toLowerCase();
+  const shortIdx = Bun.argv.indexOf("-s");
+  if (shortIdx >= 0 && shortIdx + 1 < Bun.argv.length) return Bun.argv[shortIdx + 1].toLowerCase();
+  return null;
+})();
+const shouldRun = (...svcs: string[]) => !TARGET_SERVICE || svcs.includes(TARGET_SERVICE);
 
 // ── Thin wrappers with debug baked in ──
 
@@ -151,83 +159,117 @@ const program = Effect.gen(function* () {
   );
 
   // ---- Step 2: Pre-seed qBittorrent categories ----
-  yield* Console.log("Seeding qBittorrent categories...");
+  if (shouldRun("qbittorrent")) {
+    yield* Console.log("Seeding qBittorrent categories...");
 
-  yield* Effect.sync(() =>
-    Bun.write(
-      "config/qbittorrent/qBittorrent/categories.json",
-      JSON.stringify(
-        {
-          sonarr: { savePath: "/data/torrents/tv" },
-          radarr: { savePath: "/data/torrents/movies" },
-        },
-        null,
-        2,
+    yield* Effect.sync(() =>
+      Bun.write(
+        "config/qbittorrent/qBittorrent/categories.json",
+        JSON.stringify(
+          {
+            sonarr: { savePath: "/data/torrents/tv" },
+            radarr: { savePath: "/data/torrents/movies" },
+          },
+          null,
+          2,
+        ),
       ),
-    ),
-  );
+    );
+  }
 
   // ---- Step 3: Start containers ----
   yield* Console.log("Starting containers...");
   yield* Effect.tryPromise(() => Bun.$`docker compose up -d`.quiet());
 
-  // ---- Step 4: Wait for all services concurrently ----
-  yield* Console.log("Waiting for services...");
-  yield* Effect.all(
-    [
-      waitFor("http://localhost:8989/ping", "Sonarr"),
-      waitFor("http://localhost:7878/ping", "Radarr"),
-      waitFor("http://localhost:9696/ping", "Prowlarr"),
-      waitFor("http://localhost:8888/", "qBittorrent"),
-    ],
-    { concurrency: "unbounded" },
-  );
+  // ---- Step 4: Configure Wizarr database ----
+  if (shouldRun("wizarr")) {
+    yield* Console.log("Configuring Wizarr database...");
+
+    yield* ignoreFail(
+      "Wizarr media server",
+      Effect.tryPromise(() =>
+        Bun.$`sqlite3 ./config/wizarr/database/database.db "
+INSERT OR IGNORE INTO media_server (id, name, server_type, url, api_key, verified, created_at, external_url, allow_downloads, allow_live_tv, allow_mobile_uploads)
+VALUES (1, 'Jelly', 'jellyfin', 'http://jellyfin:8096', '69461e3ac3e04fb097e1d75b626412e1', 1, '2026-07-06 00:09:17.980554', '', 0, 0, 0);
+
+DELETE FROM wizard_step WHERE server_type = 'jellyfin';
+INSERT INTO wizard_step (server_type, category, position, title, markdown, requires, require_interaction, created_at, updated_at)
+VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 **Mobile**: [iOS Streamyfin](https://apps.apple.com/us/app/streamyfin/id6593660679) ou [Android Streamyfin](https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin)
+- 📺 **Smart TVs & Streaming Devices**: [Apple TV](https://apps.apple.com/us/app/streamyfin/id6593660679?platform=tv), Fire TV, Roku, Chromecast, Android TV (Recherche jellyfin dans l''app store)
+- 🎮 **Consoles**: PlayStation & Xbox (Recherche jellyfin dans l''app store)
+|||
+
+{{ widget:button url=\"https://jellyfin.org/downloads\" text=_(\"⬇️ Download Jellyfin Clients\") }}
+
+{{ widget:button url=\"external_url\" text=_(\"Go to Jellyfin\") }}', '[]', 0, '2026-07-06 00:04:40.531209', '2026-07-06 18:13:12.643772');
+"`.quiet(),
+      ),
+    );
+
+    yield* Console.log("  Wizarr done.");
+  }
+
+  // ---- Step 5: Wait for services ----
+  const waits: Effect.Effect<void>[] = [];
+  if (shouldRun("sonarr", "prowlarr", "seerr")) waits.push(waitFor("http://localhost:8989/ping", "Sonarr"));
+  if (shouldRun("radarr", "prowlarr", "seerr")) waits.push(waitFor("http://localhost:7878/ping", "Radarr"));
+  if (shouldRun("prowlarr")) waits.push(waitFor("http://localhost:9696/ping", "Prowlarr"));
+  if (shouldRun("qbittorrent", "sonarr", "radarr")) waits.push(waitFor("http://localhost:8888/", "qBittorrent"));
+
+  if (waits.length > 0) {
+    yield* Console.log("Waiting for services...");
+    yield* Effect.all(waits, { concurrency: "unbounded" });
+  }
 
   // ---- Step 5: Get qBittorrent password ----
   let qbPass = "";
-  if (!qbPass) {
-    const logs = yield* Effect.tryPromise(() =>
-      Bun.$`docker logs qbittorrent 2>/dev/null`.text(),
-    ).pipe(Effect.catchCause(() => Effect.succeed("")));
-    const m = logs.match(/session:\s*['"]?(\S+)['"]?/);
-    if (m) qbPass = m[1];
+  if (shouldRun("qbittorrent", "sonarr", "radarr")) {
     if (!qbPass) {
-      const env = readEnv();
-      qbPass = getEnvValue(env, "QBITTORRENT_PASSWORD") || "";
+      const logs = yield* Effect.tryPromise(() =>
+        Bun.$`docker logs qbittorrent 2>/dev/null`.text(),
+      ).pipe(Effect.catchCause(() => Effect.succeed("")));
+      const m = logs.match(/session:\s*['"]?(\S+)['"]?/);
+      if (m) qbPass = m[1];
+      if (!qbPass) {
+        const env = readEnv();
+        qbPass = getEnvValue(env, "QBITTORRENT_PASSWORD") || "";
+      }
     }
-  }
 
-  if (qbPass) {
-    yield* Effect.tryPromise(() => {
-      const client = new QBittorrentClient({
-        baseUrl: "http://localhost:8888",
-        username: QB_USER,
-        password: qbPass,
-      });
-      return client.getSystemStatus();
-    }).pipe(
-      Effect.tap(() => Console.log("  qBittorrent SDK connection verified.")),
-      Effect.catchCause(() =>
-        Console.log("  Warning: qBittorrent SDK connection failed."),
-      ),
-    );
+    if (qbPass) {
+      yield* Effect.tryPromise(() => {
+        const client = new QBittorrentClient({
+          baseUrl: "http://localhost:8888",
+          username: QB_USER,
+          password: qbPass,
+        });
+        return client.getSystemStatus();
+      }).pipe(
+        Effect.tap(() => Console.log("  qBittorrent SDK connection verified.")),
+        Effect.catchCause(() =>
+          Console.log("  Warning: qBittorrent SDK connection failed."),
+        ),
+      );
 
-    yield* ignoreFail(
-      "qBittorrent preferences",
-      qbtSetPreferences(
-        "http://localhost:8888",
-        QB_USER,
-        qbPass,
-        {
-          alternative_webui_enabled: true,
-          alternative_webui_path: "/vuetorrent",
-          autorun_enabled: true,
-          autorun_program: 'chmod -R 775 "%F/"',
-          save_path: "/data/torrents/",
-          temp_path_enabled: false,
-        },
-      ),
-    );
+      if (shouldRun("qbittorrent")) {
+        yield* ignoreFail(
+          "qBittorrent preferences",
+          qbtSetPreferences(
+            "http://localhost:8888",
+            QB_USER,
+            qbPass,
+            {
+              alternative_webui_enabled: true,
+              alternative_webui_path: "/vuetorrent",
+              autorun_enabled: true,
+              autorun_program: 'chmod -R 775 "%F/"',
+              save_path: "/data/torrents/",
+              temp_path_enabled: false,
+            },
+          ),
+        );
+      }
+    }
   }
 
   // ---- Step 6: Extract API keys ----
@@ -236,281 +278,289 @@ const program = Effect.gen(function* () {
   const prowlarrKey = yield* extractApiKey("config/prowlarr/config.xml");
 
   // ---- Step 7: Configure Sonarr ----
-  if (sonarrKey) {
-    yield* Console.log("Configuring Sonarr...");
+  if (shouldRun("sonarr")) {
+    if (sonarrKey) {
+      yield* Console.log("Configuring Sonarr...");
 
-    yield* ignoreFail(
-      "Sonarr root folder",
-      apiPost("http://localhost:8989/api/v3/rootfolder", sonarrKey, {
-        path: "/data/media/tv",
-      }),
-    );
-
-    yield* ignoreFail(
-      "Sonarr media management",
-      apiPut(
-        "http://localhost:8989/api/v3/config/mediamanagement/1",
-        sonarrKey,
-        {
-          autoUnmonitorPreviouslyDownloadedEpisodes: false,
-          recycleBin: "",
-          recycleBinCleanupDays: 7,
-          downloadPropersAndRepacks: "preferAndUpgrade",
-          createEmptySeriesFolders: false,
-          deleteEmptyFolders: false,
-          fileDate: "none",
-          rescanAfterRefresh: "always",
-          autoRenameFolders: false,
-          setPermissionsLinux: false,
-          chmodFolder: "755",
-          chownGroup: "",
-          skipFreeSpaceCheckWhenImporting: false,
-          minimumFreeSpaceWhenImporting: 100,
-          copyUsingHardlinks: true,
-          importExtraFiles: true,
-          enableMediaInfo: true,
-          id: 1,
-        },
-      ),
-    );
-
-    if (qbPass) {
       yield* ignoreFail(
-        "Sonarr qBittorrent client",
-        apiPost("http://localhost:8989/api/v3/downloadclient", sonarrKey, {
-          enable: true,
-          protocol: "torrent",
-          name: "qBittorrent",
-          implementation: "QBittorrent",
-          configContract: "QBittorrentSettings",
-          fields: [
-            { name: "host", value: "qbittorrent" },
-            { name: "port", value: 8888 },
-            { name: "username", value: QB_USER },
-            { name: "password", value: qbPass },
-            { name: "tvCategory", value: "sonarr" },
-            { name: "firstAndLast", value: true },
-            { name: "useSsl", value: false },
-          ],
+        "Sonarr root folder",
+        apiPost("http://localhost:8989/api/v3/rootfolder", sonarrKey, {
+          path: "/data/media/tv",
         }),
       );
-    }
 
-    yield* Console.log("  Sonarr done.");
+      yield* ignoreFail(
+        "Sonarr media management",
+        apiPut(
+          "http://localhost:8989/api/v3/config/mediamanagement/1",
+          sonarrKey,
+          {
+            autoUnmonitorPreviouslyDownloadedEpisodes: false,
+            recycleBin: "",
+            recycleBinCleanupDays: 7,
+            downloadPropersAndRepacks: "preferAndUpgrade",
+            createEmptySeriesFolders: false,
+            deleteEmptyFolders: false,
+            fileDate: "none",
+            rescanAfterRefresh: "always",
+            autoRenameFolders: false,
+            setPermissionsLinux: false,
+            chmodFolder: "755",
+            chownGroup: "",
+            skipFreeSpaceCheckWhenImporting: false,
+            minimumFreeSpaceWhenImporting: 100,
+            copyUsingHardlinks: true,
+            importExtraFiles: true,
+            enableMediaInfo: true,
+            id: 1,
+          },
+        ),
+      );
+
+      if (qbPass) {
+        yield* ignoreFail(
+          "Sonarr qBittorrent client",
+          apiPost("http://localhost:8989/api/v3/downloadclient", sonarrKey, {
+            enable: true,
+            protocol: "torrent",
+            name: "qBittorrent",
+            implementation: "QBittorrent",
+            configContract: "QBittorrentSettings",
+            fields: [
+              { name: "host", value: "qbittorrent" },
+              { name: "port", value: 8888 },
+              { name: "username", value: QB_USER },
+              { name: "password", value: qbPass },
+              { name: "tvCategory", value: "sonarr" },
+              { name: "firstAndLast", value: true },
+              { name: "useSsl", value: false },
+            ],
+          }),
+        );
+      }
+
+      yield* Console.log("  Sonarr done.");
+    }
   }
 
   // ---- Step 8: Configure Radarr ----
-  if (radarrKey) {
-    yield* Console.log("Configuring Radarr...");
+  if (shouldRun("radarr")) {
+    if (radarrKey) {
+      yield* Console.log("Configuring Radarr...");
 
-    yield* ignoreFail(
-      "Radarr root folder",
-      apiPost("http://localhost:7878/api/v3/rootfolder", radarrKey, {
-        path: "/data/media/movies",
-      }),
-    );
-
-    yield* ignoreFail(
-      "Radarr media management",
-      apiPut(
-        "http://localhost:7878/api/v3/config/mediamanagement/1",
-        radarrKey,
-        {
-          autoUnmonitorPreviouslyDownloadedMovies: false,
-          recycleBinPath: "",
-          recycleBinCleanupDays: 7,
-          downloadPropersAndRepacks: "preferAndUpgrade",
-          createEmptyMovieFolders: false,
-          deleteEmptyFolders: false,
-          fileDate: "none",
-          rescanAfterRefresh: "always",
-          autoRenameFolders: false,
-          setPermissionsLinux: false,
-          chmodFolder: "755",
-          chownGroup: "",
-          skipFreeSpaceCheckWhenImporting: false,
-          minimumFreeSpaceWhenImporting: 100,
-          copyUsingHardlinks: true,
-          importExtraFiles: true,
-          enableMediaInfo: true,
-          id: 1,
-        },
-      ),
-    );
-
-    if (qbPass) {
       yield* ignoreFail(
-        "Radarr qBittorrent client",
-        apiPost("http://localhost:7878/api/v3/downloadclient", radarrKey, {
-          enable: true,
-          protocol: "torrent",
-          name: "qBittorrent",
-          implementation: "QBittorrent",
-          configContract: "QBittorrentSettings",
-          fields: [
-            { name: "host", value: "qbittorrent" },
-            { name: "port", value: 8888 },
-            { name: "username", value: QB_USER },
-            { name: "password", value: qbPass },
-            { name: "movieCategory", value: "radarr" },
-            { name: "firstAndLast", value: true },
-            { name: "useSsl", value: false },
-          ],
+        "Radarr root folder",
+        apiPost("http://localhost:7878/api/v3/rootfolder", radarrKey, {
+          path: "/data/media/movies",
         }),
       );
-    }
 
-    yield* Console.log("  Radarr done.");
+      yield* ignoreFail(
+        "Radarr media management",
+        apiPut(
+          "http://localhost:7878/api/v3/config/mediamanagement/1",
+          radarrKey,
+          {
+            autoUnmonitorPreviouslyDownloadedMovies: false,
+            recycleBinPath: "",
+            recycleBinCleanupDays: 7,
+            downloadPropersAndRepacks: "preferAndUpgrade",
+            createEmptyMovieFolders: false,
+            deleteEmptyFolders: false,
+            fileDate: "none",
+            rescanAfterRefresh: "always",
+            autoRenameFolders: false,
+            setPermissionsLinux: false,
+            chmodFolder: "755",
+            chownGroup: "",
+            skipFreeSpaceCheckWhenImporting: false,
+            minimumFreeSpaceWhenImporting: 100,
+            copyUsingHardlinks: true,
+            importExtraFiles: true,
+            enableMediaInfo: true,
+            id: 1,
+          },
+        ),
+      );
+
+      if (qbPass) {
+        yield* ignoreFail(
+          "Radarr qBittorrent client",
+          apiPost("http://localhost:7878/api/v3/downloadclient", radarrKey, {
+            enable: true,
+            protocol: "torrent",
+            name: "qBittorrent",
+            implementation: "QBittorrent",
+            configContract: "QBittorrentSettings",
+            fields: [
+              { name: "host", value: "qbittorrent" },
+              { name: "port", value: 8888 },
+              { name: "username", value: QB_USER },
+              { name: "password", value: qbPass },
+              { name: "movieCategory", value: "radarr" },
+              { name: "firstAndLast", value: true },
+              { name: "useSsl", value: false },
+            ],
+          }),
+        );
+      }
+
+      yield* Console.log("  Radarr done.");
+    }
   }
 
   // ---- Step 9: Configure Prowlarr ----
-  if (prowlarrKey) {
-    yield* Console.log("Configuring Prowlarr...");
+  if (shouldRun("prowlarr")) {
+    if (prowlarrKey) {
+      yield* Console.log("Configuring Prowlarr...");
 
-    yield* ignoreFail(
-      "Prowlarr FlareSolverr",
-      apiPost("http://localhost:9696/api/v1/indexerproxy", prowlarrKey, {
-        name: "FlareSolverr",
-        implementation: "FlareSolverr",
-        configContract: "FlareSolverrSettings",
-        fields: [{ name: "host", value: "http://flaresolverr:8191" }],
-        tags: [],
-      }),
-    );
-
-    if (sonarrKey) {
       yield* ignoreFail(
-        "Prowlarr → Sonarr app",
-        apiPost("http://localhost:9696/api/v1/applications", prowlarrKey, {
-          name: "Sonarr",
-          implementation: "Sonarr",
-          configContract: "SonarrSettings",
-          syncLevel: "fullSync",
-          fields: [
-            { name: "baseUrl", value: "http://sonarr:8989" },
-            { name: "apiKey", value: sonarrKey },
-            { name: "prowlarrUrl", value: "http://prowlarr:9696" },
-            {
-              name: "syncCategories",
-              value: [5000, 5001, 5002, 5003, 5004, 5005],
-            },
-          ],
+        "Prowlarr FlareSolverr",
+        apiPost("http://localhost:9696/api/v1/indexerproxy", prowlarrKey, {
+          name: "FlareSolverr",
+          implementation: "FlareSolverr",
+          configContract: "FlareSolverrSettings",
+          fields: [{ name: "host", value: "http://flaresolverr:8191" }],
           tags: [],
         }),
       );
-    }
 
-    if (radarrKey) {
-      yield* ignoreFail(
-        "Prowlarr → Radarr app",
-        apiPost("http://localhost:9696/api/v1/applications", prowlarrKey, {
-          name: "Radarr",
-          implementation: "Radarr",
-          configContract: "RadarrSettings",
-          syncLevel: "fullSync",
-          fields: [
-            { name: "baseUrl", value: "http://radarr:7878" },
-            { name: "apiKey", value: radarrKey },
-            { name: "prowlarrUrl", value: "http://prowlarr:9696" },
-            {
-              name: "syncCategories",
-              value: [
-                2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080,
-              ],
-            },
-          ],
-          tags: [],
-        }),
-      );
-    }
+      if (sonarrKey) {
+        yield* ignoreFail(
+          "Prowlarr → Sonarr app",
+          apiPost("http://localhost:9696/api/v1/applications", prowlarrKey, {
+            name: "Sonarr",
+            implementation: "Sonarr",
+            configContract: "SonarrSettings",
+            syncLevel: "fullSync",
+            fields: [
+              { name: "baseUrl", value: "http://sonarr:8989" },
+              { name: "apiKey", value: sonarrKey },
+              { name: "prowlarrUrl", value: "http://prowlarr:9696" },
+              {
+                name: "syncCategories",
+                value: [5000, 5001, 5002, 5003, 5004, 5005],
+              },
+            ],
+            tags: [],
+          }),
+        );
+      }
 
-    yield* Console.log("  Prowlarr done.");
+      if (radarrKey) {
+        yield* ignoreFail(
+          "Prowlarr → Radarr app",
+          apiPost("http://localhost:9696/api/v1/applications", prowlarrKey, {
+            name: "Radarr",
+            implementation: "Radarr",
+            configContract: "RadarrSettings",
+            syncLevel: "fullSync",
+            fields: [
+              { name: "baseUrl", value: "http://radarr:7878" },
+              { name: "apiKey", value: radarrKey },
+              { name: "prowlarrUrl", value: "http://prowlarr:9696" },
+              {
+                name: "syncCategories",
+                value: [
+                  2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080,
+                ],
+              },
+            ],
+            tags: [],
+          }),
+        );
+      }
+
+      yield* Console.log("  Prowlarr done.");
+    }
   }
 
   // ---- Step 10: Configure Homarr (requires HOMARR_API_KEY in .env) ----
-  if (Bun.env.HOMARR_API_KEY) {
-    yield* Console.log("Configuring Homarr apps...");
+  if (shouldRun("homarr")) {
+    if (Bun.env.HOMARR_API_KEY) {
+      yield* Console.log("Configuring Homarr apps...");
 
-    const icon = (slug: string) =>
-      `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${slug}.png`;
+      const icon = (slug: string) =>
+        `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${slug}.png`;
 
-    const apps: Array<{
-      name: string;
-      description: string;
-      iconUrl: string;
-      href: string;
-      pingUrl: string;
-    }> = [
-      {
-        name: "Jellyfin",
-        description: "Media Server",
-        iconUrl: icon("jellyfin"),
-        href: "http://jellyfin:8096",
-        pingUrl: "http://jellyfin:8096",
-      },
-      {
-        name: "Sonarr",
-        description: "TV Series Manager",
-        iconUrl: icon("sonarr"),
-        href: "http://sonarr:8989",
-        pingUrl: "http://sonarr:8989/ping",
-      },
-      {
-        name: "Radarr",
-        description: "Movie Manager",
-        iconUrl: icon("radarr"),
-        href: "http://radarr:7878",
-        pingUrl: "http://radarr:7878/ping",
-      },
-      {
-        name: "Prowlarr",
-        description: "Indexer Manager",
-        iconUrl: icon("prowlarr"),
-        href: "http://prowlarr:9696",
-        pingUrl: "http://prowlarr:9696/ping",
-      },
-      {
-        name: "qBittorrent",
-        description: "Torrent Client",
-        iconUrl: icon("qbittorrent"),
-        href: "http://qbittorrent:8888",
-        pingUrl: "http://qbittorrent:8888",
-      },
-      {
-        name: "Bazarr",
-        description: "Subtitle Manager",
-        iconUrl: icon("bazarr"),
-        href: "http://bazarr:6767",
-        pingUrl: "http://bazarr:6767",
-      },
-      {
-        name: "Seerr",
-        description: "Media Requests",
-        iconUrl: icon("overseerr"),
-        href: "http://seerr:5055",
-        pingUrl: "http://seerr:5055",
-      },
-      {
-        name: "Jackett",
-        description: "Indexer Proxy",
-        iconUrl: icon("jackett"),
-        href: "http://jackett:9117",
-        pingUrl: "http://jackett:9117",
-      },
-    ];
+      const apps: Array<{
+        name: string;
+        description: string;
+        iconUrl: string;
+        href: string;
+        pingUrl: string;
+      }> = [
+        {
+          name: "Jellyfin",
+          description: "Media Server",
+          iconUrl: icon("jellyfin"),
+          href: "http://jellyfin:8096",
+          pingUrl: "http://jellyfin:8096",
+        },
+        {
+          name: "Sonarr",
+          description: "TV Series Manager",
+          iconUrl: icon("sonarr"),
+          href: "http://sonarr:8989",
+          pingUrl: "http://sonarr:8989/ping",
+        },
+        {
+          name: "Radarr",
+          description: "Movie Manager",
+          iconUrl: icon("radarr"),
+          href: "http://radarr:7878",
+          pingUrl: "http://radarr:7878/ping",
+        },
+        {
+          name: "Prowlarr",
+          description: "Indexer Manager",
+          iconUrl: icon("prowlarr"),
+          href: "http://prowlarr:9696",
+          pingUrl: "http://prowlarr:9696/ping",
+        },
+        {
+          name: "qBittorrent",
+          description: "Torrent Client",
+          iconUrl: icon("qbittorrent"),
+          href: "http://qbittorrent:8888",
+          pingUrl: "http://qbittorrent:8888",
+        },
+        {
+          name: "Bazarr",
+          description: "Subtitle Manager",
+          iconUrl: icon("bazarr"),
+          href: "http://bazarr:6767",
+          pingUrl: "http://bazarr:6767",
+        },
+        {
+          name: "Seerr",
+          description: "Media Requests",
+          iconUrl: icon("overseerr"),
+          href: "http://seerr:5055",
+          pingUrl: "http://seerr:5055",
+        },
+        {
+          name: "Jackett",
+          description: "Indexer Proxy",
+          iconUrl: icon("jackett"),
+          href: "http://jackett:9117",
+          pingUrl: "http://jackett:9117",
+        },
+      ];
 
-    for (const app of apps) {
-      yield* ignoreFail(
-        `Homarr app: ${app.name}`,
-        homarrPost("http://localhost:7575/api/apps", app),
+      for (const app of apps) {
+        yield* ignoreFail(
+          `Homarr app: ${app.name}`,
+          homarrPost("http://localhost:7575/api/apps", app),
+        );
+      }
+
+      yield* Console.log("  Homarr done.");
+    } else {
+      yield* Console.log(
+        "  Skipping Homarr — set HOMARR_API_KEY in .env and re-run",
       );
     }
-
-    yield* Console.log("  Homarr done.");
-  } else {
-    yield* Console.log(
-      "  Skipping Homarr — set HOMARR_API_KEY in .env and re-run",
-    );
   }
 
   // ---- Step 11: Export API keys to .env ----
@@ -571,117 +621,111 @@ const program = Effect.gen(function* () {
 
   // ---- Step 12: Configure Seerr services (requires API key) ----
 
-  if (seerrKey && sonarrKey && radarrKey) {
-    yield* Console.log("Configuring Seerr services...");
+  if (shouldRun("seerr")) {
+    if (seerrKey && sonarrKey && radarrKey) {
+      yield* Console.log("Configuring Seerr services...");
 
-    // Wait for Seerr to be ready
-    yield* Console.log("  Waiting for Seerr...");
-    yield* Effect.retry(
-      Effect.tryPromise(() => {
-        const sc = new SeerrClient({
-          baseUrl: "http://localhost:5055",
-          apiKey: seerrKey,
-        });
-        return sc.getSystemStatus();
-      }),
-      pipe(
-        Schedule.spaced(Duration.seconds(2)),
-        Schedule.both(Schedule.recurs(90)),
-      ),
-    );
-    yield* Console.log("  Seerr ready");
-
-    const existingSonarrs = yield* pipe(
-      Effect.tryPromise(async () => {
-        const r = await Seerr.getSettingsSonarr();
-        return r.data ?? [];
-      }),
-      Effect.catchAll(() =>
-        Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
-      ),
-    );
-
-    if (
-      existingSonarrs.some(
-        (s) =>
-          s.name === "Sonarr" &&
-          s.hostname === "sonarr" &&
-          s.port === 8989 &&
-          s.apiKey === sonarrKey,
-      )
-    ) {
-      yield* Console.log("  Seerr → Sonarr already configured, skipping");
-    } else {
-      yield* ignoreFail(
-        "Seerr → Sonarr",
-        Effect.tryPromise(() =>
-          Seerr.postSettingsSonarr({
-            body: {
-              name: "Sonarr",
-              hostname: "sonarr",
-              port: 8989,
-              apiKey: sonarrKey,
-              useSsl: false,
-              baseUrl: "",
-              activeProfileId: 1,
-              activeProfileName: "HD-720p/1080p",
-              activeDirectory: "/data/media/tv",
-              is4k: false,
-              enableSeasonFolders: true,
-              isDefault: true,
-              syncEnabled: true,
-            },
-          }),
+      // Wait for Seerr to be ready
+      yield* Console.log("  Waiting for Seerr...");
+      yield* Effect.retry(
+        Effect.tryPromise(() => {
+          const sc = new SeerrClient({
+            baseUrl: "http://localhost:5055",
+            apiKey: seerrKey,
+          });
+          return sc.getSystemStatus();
+        }),
+        pipe(
+          Schedule.spaced(Duration.seconds(2)),
+          Schedule.both(Schedule.recurs(90)),
         ),
       );
-    }
+      yield* Console.log("  Seerr ready");
 
-    const existingRadarrs = yield* pipe(
-      Effect.tryPromise(async () => {
-        const r = await Seerr.getSettingsRadarr();
-        return r.data ?? [];
-      }),
-      Effect.catchAll(() =>
-        Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
-      ),
-    );
-
-    if (
-      existingRadarrs.some(
-        (s) =>
-          s.name === "Radarr" &&
-          s.hostname === "radarr" &&
-          s.port === 7878 &&
-          s.apiKey === radarrKey,
-      )
-    ) {
-      yield* Console.log("  Seerr → Radarr already configured, skipping");
-    } else {
-      yield* ignoreFail(
-        "Seerr → Radarr",
-        Effect.tryPromise(() =>
-          Seerr.postSettingsRadarr({
-            body: {
-              name: "Radarr",
-              hostname: "radarr",
-              port: 7878,
-              apiKey: radarrKey,
-              useSsl: false,
-              baseUrl: "",
-              activeProfileId: 1,
-              activeProfileName: "HD-720p/1080p",
-              activeDirectory: "/data/media/movies",
-              is4k: false,
-              minimumAvailability: "released",
-              isDefault: true,
-              syncEnabled: true,
-            },
-          }),
+      const existingSonarrs = yield* pipe(
+        apiGetJson<Array<{ name: string; hostname: string; port: number; apiKey: string }>>(
+          "http://localhost:5055/api/v1/settings/sonarr",
+          seerrKey,
+        ),
+        Effect.catchAll(() =>
+          Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
         ),
       );
-    }
 
-    yield* Console.log("  Seerr done.");
+      if (
+        existingSonarrs.some(
+          (s) =>
+            s.name === "Sonarr" &&
+            s.hostname === "sonarr" &&
+            s.port === 8989 &&
+            s.apiKey === sonarrKey,
+        )
+      ) {
+        yield* Console.log("  Seerr → Sonarr already configured, skipping");
+      } else {
+        yield* ignoreFail(
+          "Seerr → Sonarr",
+          apiPostJson("http://localhost:5055/api/v1/settings/sonarr", seerrKey, {
+            name: "Sonarr",
+            hostname: "sonarr",
+            port: 8989,
+            apiKey: sonarrKey,
+            useSsl: false,
+            baseUrl: "",
+            activeProfileId: 1,
+            activeProfileName: "HD-720p/1080p",
+            activeDirectory: "/data/media/tv",
+            is4k: false,
+            enableSeasonFolders: true,
+            isDefault: true,
+            syncEnabled: true,
+          }),
+        );
+      }
+
+      const existingRadarrs = yield* pipe(
+        apiGetJson<Array<{ name: string; hostname: string; port: number; apiKey: string }>>(
+          "http://localhost:5055/api/v1/settings/radarr",
+          seerrKey,
+        ),
+        Effect.catchAll(() =>
+          Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
+        ),
+      );
+
+      if (
+        existingRadarrs.some(
+          (s) =>
+            s.name === "Radarr" &&
+            s.hostname === "radarr" &&
+            s.port === 7878 &&
+            s.apiKey === radarrKey,
+        )
+      ) {
+        yield* Console.log("  Seerr → Radarr already configured, skipping");
+      } else {
+        yield* ignoreFail(
+          "Seerr → Radarr",
+          apiPostJson("http://localhost:5055/api/v1/settings/radarr", seerrKey, {
+            name: "Radarr",
+            hostname: "radarr",
+            port: 7878,
+            apiKey: radarrKey,
+            useSsl: false,
+            baseUrl: "",
+            activeProfileId: 1,
+            activeProfileName: "HD-720p/1080p",
+            activeDirectory: "/data/media/movies",
+            is4k: false,
+            minimumAvailability: "released",
+            isDefault: true,
+            syncEnabled: true,
+          }),
+        );
+      }
+
+      yield* Console.log("  Seerr done.");
+    }
   }
 
   // ---- Summary ----
