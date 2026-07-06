@@ -76,12 +76,3 @@ alldown: traefikdown homerdown jellyfindown qbittorrentdown filebrowserdown emby
 
 debug:
 	docker run -it --network traefik alpine sh
-
-autheliaup:
-	docker compose -f ./authelia/docker-compose.yml up -d
-
-autheliadown:
-	docker compose -f ./authelia/docker-compose.yml down
-
-authelialog:
-	docker logs -f authelia

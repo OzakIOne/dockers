@@ -1,179 +1,143 @@
-import { Effect, Schedule, Duration, pipe, Layer, Console } from "effect";
 import {
-  HttpClient,
-  HttpClientRequest,
-  FetchHttpClient,
-} from "@effect/platform";
-import { BunContext, BunRuntime } from "@effect/platform-bun";
+  Effect,
+  Schedule,
+  Duration,
+  pipe,
+  Layer,
+  Console,
+  Schema,
+} from "effect";
+import { FetchHttpClient } from "effect/unstable/http";
+import { BunServices, BunRuntime } from "@effect/platform-bun";
+import { QBittorrentClient } from "tsarr/qbittorrent";
+import { SeerrClient } from "tsarr/seerr";
+import { Seerr } from "tsarr";
+import {
+  extractHostPort,
+  readEnv,
+  getEnvValue,
+  setEnvValue,
+  writeEnv,
+  extractApiKey,
+  extractSeerrKey,
+  apiGet as baseApiGet,
+  apiPost as baseApiPost,
+  apiPut as baseApiPut,
+  apiGetJson as baseApiGetJson,
+  apiPostJson as baseApiPostJson,
+  homarrPost as baseHomarrPost,
+  ignoreFail as baseIgnoreFail,
+  qbtSetPreferences as baseQbtSetPreferences,
+  waitFor,
+} from "./utils";
 
-const QB_USER = Bun.argv[2] || "admin";
-const QB_PASS_ARG = Bun.argv[3] || "";
-const HOMARR_KEY = Bun.env.HOMARR_API_KEY || "";
+const QB_USER = "admin";
 const DEBUG = Bun.env.DEBUG === "true" || Bun.env.LOG_LEVEL === "DEBUG";
 
-// ── Helpers ──
+// ── Thin wrappers with debug baked in ──
 
-const extractApiKey = (xmlPath: string): Effect.Effect<string | null> =>
-  Effect.sync(() => {
-    try {
-      const content = require("fs").readFileSync(xmlPath, "utf-8");
-      const m = content.match(/<ApiKey>([^<]+)<\/ApiKey>/);
-      return m ? m[1] : null;
-    } catch {
-      return null;
-    }
-  });
-
-const extractSeerrKey = (): Effect.Effect<string | null> =>
-  Effect.sync(() => {
-    try {
-      const raw = require("fs").readFileSync(
-        "config/seerr/settings.json",
-        "utf-8",
-      );
-      const parsed = JSON.parse(raw);
-      return parsed?.main?.apiKey ?? null;
-    } catch {
-      return null;
-    }
-  });
-
-const seerrPost = (url: string, key: string, body: unknown) => {
-  const req = pipe(
-    HttpClientRequest.post(url),
-    HttpClientRequest.setHeader("X-Api-Key", key),
-    HttpClientRequest.bodyUnsafeJson(body),
-    HttpClient.execute,
-  );
-  if (!DEBUG) return req;
-  return req.pipe(
-    Effect.tap((res) =>
-      Effect.sync(() =>
-        console.error(
-          `  \x1b[33m[debug]\x1b[0m POST ${url} → ${res.status}`,
-        ),
-      ),
-    ),
-    Effect.tapError((e) =>
-      Effect.sync(() =>
-        console.error(
-          `  \x1b[33m[debug]\x1b[0m POST ${url} FAILED: ${String(e).slice(0, 120)}`,
-        ),
-      ),
-    ),
-  );
-};
-
-const apiPost = (url: string, key: string, body: unknown) => {
-  const req = pipe(
-    HttpClientRequest.post(url),
-    HttpClientRequest.setHeader("X-Api-Key", key),
-    HttpClientRequest.bodyUnsafeJson(body),
-    HttpClient.execute,
-  );
-  if (!DEBUG) return req;
-  return req.pipe(
-    Effect.tap((res) =>
-      Effect.sync(() =>
-        console.error(`  \x1b[33m[debug]\x1b[0m POST ${url} → ${res.status}`),
-      ),
-    ),
-    Effect.tapError((e) =>
-      Effect.sync(() =>
-        console.error(
-          `  \x1b[33m[debug]\x1b[0m POST ${url} FAILED: ${String(e).slice(0, 120)}`,
-        ),
-      ),
-    ),
-  );
-};
-
-const apiPut = (url: string, key: string, body: unknown) => {
-  const req = pipe(
-    HttpClientRequest.put(url),
-    HttpClientRequest.setHeader("X-Api-Key", key),
-    HttpClientRequest.bodyUnsafeJson(body),
-    HttpClient.execute,
-  );
-  if (!DEBUG) return req;
-  return req.pipe(
-    Effect.tap((res) =>
-      Effect.sync(() =>
-        console.error(`  \x1b[33m[debug]\x1b[0m PUT ${url} → ${res.status}`),
-      ),
-    ),
-    Effect.tapError((e) =>
-      Effect.sync(() =>
-        console.error(
-          `  \x1b[33m[debug]\x1b[0m PUT ${url} FAILED: ${String(e).slice(0, 120)}`,
-        ),
-      ),
-    ),
-  );
-};
-
-const homarrPost = (url: string, body: unknown) => {
-  const req = pipe(
-    HttpClientRequest.post(url),
-    HttpClientRequest.setHeader("ApiKey", HOMARR_KEY),
-    HttpClientRequest.bodyUnsafeJson(body),
-    HttpClient.execute,
-  );
-  if (!DEBUG) return req;
-  return req.pipe(
-    Effect.tap((res) =>
-      Effect.sync(() =>
-        console.error(`  \x1b[33m[debug]\x1b[0m POST ${url} → ${res.status}`),
-      ),
-    ),
-    Effect.tapError((e) =>
-      Effect.sync(() =>
-        console.error(
-          `  \x1b[33m[debug]\x1b[0m POST ${url} FAILED: ${String(e).slice(0, 120)}`,
-        ),
-      ),
-    ),
-  );
-};
-
-// Ignore non-critical failures (root folder exists, already configured, etc.)
-// In debug mode, logs the error to stderr.
+const apiGet = (url: string, key: string) => baseApiGet(url, key, DEBUG);
+const apiPost = (url: string, key: string, body: unknown) =>
+  baseApiPost(url, key, body, DEBUG);
+const apiPut = (url: string, key: string, body: unknown) =>
+  baseApiPut(url, key, body, DEBUG);
+const apiGetJson = <T>(url: string, key: string) =>
+  baseApiGetJson<T>(url, key, DEBUG);
+const apiPostJson = <T>(url: string, key: string, body: unknown) =>
+  baseApiPostJson<T>(url, key, body, DEBUG);
+const homarrPost = (url: string, body: unknown) =>
+  baseHomarrPost(url, body, Bun.env.HOMARR_API_KEY || "", DEBUG);
 const ignoreFail = <A, E, R>(
   label: string,
   eff: Effect.Effect<A, E, R>,
-): Effect.Effect<void> =>
-  eff.pipe(
-    Effect.catchAll((error) => {
-      if (DEBUG) {
-        const msg =
-          error instanceof Error ? error.message : JSON.stringify(error);
-        console.error(
-          `  \x1b[33m[debug]\x1b[0m ${label}: ${msg.slice(0, 200)}`,
-        );
-      }
-      return Effect.void;
-    }),
-  );
+): Effect.Effect<void> => baseIgnoreFail(label, eff, DEBUG);
+const qbtSetPreferences = (
+  baseUrl: string,
+  username: string,
+  password: string,
+  prefs: Record<string, unknown>,
+) => baseQbtSetPreferences(baseUrl, username, password, prefs);
 
-// Wait for a service with retry (2s interval, up to 90 attempts = 3 min)
-const waitFor = (url: string, label: string) =>
-  Effect.gen(function* () {
-    yield* Console.log(`  Waiting for ${label}...`);
-    yield* pipe(
-      pipe(HttpClientRequest.get(url), HttpClient.execute),
-      Effect.retry(
-        pipe(
-          Schedule.spaced(Duration.seconds(2)),
-          Schedule.compose(Schedule.recurs(90)),
-        ),
-      ),
-    );
-    yield* Console.log(`  ${label} ready`);
-  });
+// ── Env schema ──
+
+const EnvSchema = Schema.Struct({
+  PUID: Schema.String,
+  PGID: Schema.String,
+  TZ: Schema.String,
+  UMASK: Schema.String,
+  HOMARR_SECRET: Schema.String,
+  HOMARR_API_KEY: Schema.String,
+  SONARR_API_KEY: Schema.NonEmptyString,
+  SONARR_URL: Schema.NonEmptyString,
+  RADARR_API_KEY: Schema.NonEmptyString,
+  RADARR_URL: Schema.NonEmptyString,
+  PROWLARR_API_KEY: Schema.String,
+  SEERR_API_KEY: Schema.String,
+});
 
 // ── Main program ──
 
 const program = Effect.gen(function* () {
+  // ---- Step 0: Populate and validate .env ----
+  const dcContent = yield* Effect.tryPromise(() =>
+    Bun.file("docker-compose.yml").text(),
+  );
+
+  let envContent = readEnv();
+
+  const sonarrUrl = getEnvValue(envContent, "SONARR_URL");
+  const radarrUrl = getEnvValue(envContent, "RADARR_URL");
+
+  if (!sonarrUrl) {
+    const port = extractHostPort(dcContent, "sonarr");
+    if (port) {
+      yield* Console.log(
+        `  Auto-populating SONARR_URL from docker-compose.yml → http://localhost:${port}`,
+      );
+      envContent = setEnvValue(
+        envContent,
+        "SONARR_URL",
+        `http://localhost:${port}`,
+      );
+    }
+  }
+
+  if (!radarrUrl) {
+    const port = extractHostPort(dcContent, "radarr");
+    if (port) {
+      yield* Console.log(
+        `  Auto-populating RADARR_URL from docker-compose.yml → http://localhost:${port}`,
+      );
+      envContent = setEnvValue(
+        envContent,
+        "RADARR_URL",
+        `http://localhost:${port}`,
+      );
+    }
+  }
+
+  writeEnv(envContent);
+
+  // Validate parsed env values
+  yield* Effect.sync(() => {
+    const parsed: Record<string, string> = {};
+    for (const line of envContent.split("\n")) {
+      const m = line.match(/^([A-Z_]+)=(.*)$/);
+      if (m) parsed[m[1]] = m[2];
+    }
+    try {
+      Schema.decodeUnknownSync(EnvSchema)(parsed);
+      console.log("  .env validation passed.");
+    } catch (e) {
+      if (Schema.isSchemaError(e)) {
+        console.log(
+          `  Warning: .env validation failed:\n  ${e.message.split("\n").join("\n  ")}`,
+        );
+      }
+      console.log("  Some setup steps may fail.");
+    }
+  });
+
   // ---- Step 1: Create directories ----
   yield* Console.log("Creating directories...");
   yield* Effect.tryPromise(() =>
@@ -186,25 +150,8 @@ const program = Effect.gen(function* () {
     Bun.$`chmod -R a=,a+rX,u+w,g+w data/ config/ 2>/dev/null || true`.quiet(),
   );
 
-  // ---- Step 2: Pre-seed qBittorrent config ----
-  yield* Console.log("Seeding qBittorrent config...");
-
-  const qbtConf = `[AutoRun]
-enabled=true
-program=chmod -R 775 "%F/"
-
-[LegalNotice]
-Accepted=true
-
-[Preferences]
-Downloads\\SavePath=/data/torrents/
-Downloads\\TempPathEnabled=false
-WebUI\\AlternativeUIEnabled=true
-WebUI\\RootFolder=/vuetorrent
-`;
-  yield* Effect.sync(() =>
-    Bun.write("config/qbittorrent/qBittorrent/qBittorrent.conf", qbtConf),
-  );
+  // ---- Step 2: Pre-seed qBittorrent categories ----
+  yield* Console.log("Seeding qBittorrent categories...");
 
   yield* Effect.sync(() =>
     Bun.write(
@@ -237,13 +184,50 @@ WebUI\\RootFolder=/vuetorrent
   );
 
   // ---- Step 5: Get qBittorrent password ----
-  let qbPass = QB_PASS_ARG;
+  let qbPass = "";
   if (!qbPass) {
     const logs = yield* Effect.tryPromise(() =>
       Bun.$`docker logs qbittorrent 2>/dev/null`.text(),
-    ).pipe(Effect.catchAll(() => Effect.succeed("")));
+    ).pipe(Effect.catchCause(() => Effect.succeed("")));
     const m = logs.match(/session:\s*['"]?(\S+)['"]?/);
     if (m) qbPass = m[1];
+    if (!qbPass) {
+      const env = readEnv();
+      qbPass = getEnvValue(env, "QBITTORRENT_PASSWORD") || "";
+    }
+  }
+
+  if (qbPass) {
+    yield* Effect.tryPromise(() => {
+      const client = new QBittorrentClient({
+        baseUrl: "http://localhost:8888",
+        username: QB_USER,
+        password: qbPass,
+      });
+      return client.getSystemStatus();
+    }).pipe(
+      Effect.tap(() => Console.log("  qBittorrent SDK connection verified.")),
+      Effect.catchCause(() =>
+        Console.log("  Warning: qBittorrent SDK connection failed."),
+      ),
+    );
+
+    yield* ignoreFail(
+      "qBittorrent preferences",
+      qbtSetPreferences(
+        "http://localhost:8888",
+        QB_USER,
+        qbPass,
+        {
+          alternative_webui_enabled: true,
+          alternative_webui_path: "/vuetorrent",
+          autorun_enabled: true,
+          autorun_program: 'chmod -R 775 "%F/"',
+          save_path: "/data/torrents/",
+          temp_path_enabled: false,
+        },
+      ),
+    );
   }
 
   // ---- Step 6: Extract API keys ----
@@ -444,7 +428,7 @@ WebUI\\RootFolder=/vuetorrent
   }
 
   // ---- Step 10: Configure Homarr (requires HOMARR_API_KEY in .env) ----
-  if (HOMARR_KEY) {
+  if (Bun.env.HOMARR_API_KEY) {
     yield* Console.log("Configuring Homarr apps...");
 
     const icon = (slug: string) =>
@@ -531,6 +515,7 @@ WebUI\\RootFolder=/vuetorrent
 
   // ---- Step 11: Export API keys to .env ----
   yield* Console.log("Exporting API keys to .env...");
+  const seerrKey = yield* extractSeerrKey();
   yield* Effect.sync(() => {
     const envPath = ".env";
     let env = "";
@@ -550,16 +535,6 @@ WebUI\\RootFolder=/vuetorrent
     setOrReplace("SONARR_API_KEY", sonarrKey);
     setOrReplace("RADARR_API_KEY", radarrKey);
     setOrReplace("PROWLARR_API_KEY", prowlarrKey);
-
-    let seerrKey: string | null = null;
-    try {
-      const seerrSettings = require("fs").readFileSync(
-        "config/seerr/settings.json",
-        "utf-8",
-      );
-      const parsed = JSON.parse(seerrSettings);
-      seerrKey = parsed.main.apiKey ?? null;
-    } catch {}
     setOrReplace("SEERR_API_KEY", seerrKey);
 
     require("fs").writeFileSync(envPath, env);
@@ -574,84 +549,137 @@ WebUI\\RootFolder=/vuetorrent
       : "",
   );
 
+  // Validate final .env state
+  yield* Effect.sync(() => {
+    const content = readEnv();
+    const parsed: Record<string, string> = {};
+    for (const line of content.split("\n")) {
+      const m = line.match(/^([A-Z_]+)=(.*)$/);
+      if (m) parsed[m[1]] = m[2];
+    }
+    // Run sync validation and log warnings
+    try {
+      Schema.decodeUnknownSync(EnvSchema)(parsed);
+    } catch (e) {
+      if (Schema.isSchemaError(e)) {
+        console.log(
+          `  Warning: .env validation issues:\n  ${e.message.split("\n").join("\n  ")}`,
+        );
+      }
+    }
+  });
+
   // ---- Step 12: Configure Seerr services (requires API key) ----
-  const seerrKey = yield* extractSeerrKey();
 
   if (seerrKey && sonarrKey && radarrKey) {
     yield* Console.log("Configuring Seerr services...");
 
     // Wait for Seerr to be ready
-    yield* waitFor("http://localhost:5055/api/v1/status", "Seerr");
-
-    // Get Sonarr quality profile ID (use first one)
-    let sonarrProfileId = 1;
-    let sonarrProfileName = "HD-720p/1080p";
-    try {
-      const snRes = yield* pipe(
-        HttpClientRequest.get("http://localhost:8989/api/v3/qualityprofile"),
-        HttpClientRequest.setHeader("X-Api-Key", sonarrKey),
-        HttpClient.execute,
-      );
-      const snProfiles = yield* snRes.json as any;
-      if (snProfiles?.length > 0) {
-        sonarrProfileId = snProfiles[0].id;
-        sonarrProfileName = snProfiles[0].name;
-      }
-    } catch {}
-
-    // Get Radarr quality profile ID
-    let radarrProfileId = 1;
-    let radarrProfileName = "HD-720p/1080p";
-    try {
-      const rdRes = yield* pipe(
-        HttpClientRequest.get("http://localhost:7878/api/v3/qualityprofile"),
-        HttpClientRequest.setHeader("X-Api-Key", radarrKey),
-        HttpClient.execute,
-      );
-      const rdProfiles = yield* rdRes.json as any;
-      if (rdProfiles?.length > 0) {
-        radarrProfileId = rdProfiles[0].id;
-        radarrProfileName = rdProfiles[0].name;
-      }
-    } catch {}
-
-    yield* ignoreFail(
-      "Seerr → Sonarr",
-      seerrPost("http://localhost:5055/api/v1/settings/sonarr", seerrKey, {
-        name: "Sonarr",
-        hostname: "sonarr",
-        port: 8989,
-        apiKey: sonarrKey,
-        useSsl: false,
-        baseUrl: "",
-        activeProfileId: sonarrProfileId,
-        activeProfileName: sonarrProfileName,
-        activeDirectory: "/data/media/tv",
-        is4k: false,
-        enableSeasonFolders: true,
-        isDefault: true,
-        syncEnabled: true,
+    yield* Console.log("  Waiting for Seerr...");
+    yield* Effect.retry(
+      Effect.tryPromise(() => {
+        const sc = new SeerrClient({
+          baseUrl: "http://localhost:5055",
+          apiKey: seerrKey,
+        });
+        return sc.getSystemStatus();
       }),
+      pipe(
+        Schedule.spaced(Duration.seconds(2)),
+        Schedule.both(Schedule.recurs(90)),
+      ),
+    );
+    yield* Console.log("  Seerr ready");
+
+    const existingSonarrs = yield* pipe(
+      Effect.tryPromise(async () => {
+        const r = await Seerr.getSettingsSonarr();
+        return r.data ?? [];
+      }),
+      Effect.catchAll(() =>
+        Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
+      ),
     );
 
-    yield* ignoreFail(
-      "Seerr → Radarr",
-      seerrPost("http://localhost:5055/api/v1/settings/radarr", seerrKey, {
-        name: "Radarr",
-        hostname: "radarr",
-        port: 7878,
-        apiKey: radarrKey,
-        useSsl: false,
-        baseUrl: "",
-        activeProfileId: radarrProfileId,
-        activeProfileName: radarrProfileName,
-        activeDirectory: "/data/media/movies",
-        is4k: false,
-        minimumAvailability: "released",
-        isDefault: true,
-        syncEnabled: true,
+    if (
+      existingSonarrs.some(
+        (s) =>
+          s.name === "Sonarr" &&
+          s.hostname === "sonarr" &&
+          s.port === 8989 &&
+          s.apiKey === sonarrKey,
+      )
+    ) {
+      yield* Console.log("  Seerr → Sonarr already configured, skipping");
+    } else {
+      yield* ignoreFail(
+        "Seerr → Sonarr",
+        Effect.tryPromise(() =>
+          Seerr.postSettingsSonarr({
+            body: {
+              name: "Sonarr",
+              hostname: "sonarr",
+              port: 8989,
+              apiKey: sonarrKey,
+              useSsl: false,
+              baseUrl: "",
+              activeProfileId: 1,
+              activeProfileName: "HD-720p/1080p",
+              activeDirectory: "/data/media/tv",
+              is4k: false,
+              enableSeasonFolders: true,
+              isDefault: true,
+              syncEnabled: true,
+            },
+          }),
+        ),
+      );
+    }
+
+    const existingRadarrs = yield* pipe(
+      Effect.tryPromise(async () => {
+        const r = await Seerr.getSettingsRadarr();
+        return r.data ?? [];
       }),
+      Effect.catchAll(() =>
+        Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
+      ),
     );
+
+    if (
+      existingRadarrs.some(
+        (s) =>
+          s.name === "Radarr" &&
+          s.hostname === "radarr" &&
+          s.port === 7878 &&
+          s.apiKey === radarrKey,
+      )
+    ) {
+      yield* Console.log("  Seerr → Radarr already configured, skipping");
+    } else {
+      yield* ignoreFail(
+        "Seerr → Radarr",
+        Effect.tryPromise(() =>
+          Seerr.postSettingsRadarr({
+            body: {
+              name: "Radarr",
+              hostname: "radarr",
+              port: 7878,
+              apiKey: radarrKey,
+              useSsl: false,
+              baseUrl: "",
+              activeProfileId: 1,
+              activeProfileName: "HD-720p/1080p",
+              activeDirectory: "/data/media/movies",
+              is4k: false,
+              minimumAvailability: "released",
+              isDefault: true,
+              syncEnabled: true,
+            },
+          }),
+        ),
+      );
+    }
 
     yield* Console.log("  Seerr done.");
   }
@@ -684,7 +712,7 @@ WebUI\\RootFolder=/vuetorrent
   yield* Console.log(
     "  3. Configure Jellyfin libraries: /data/media/tv and /data/media/movies",
   );
-  if (!HOMARR_KEY) {
+  if (!Bun.env.HOMARR_API_KEY) {
     yield* Console.log(
       "  4. Generate Homarr API key (Management → Tools → API → Authentication)",
     );
@@ -699,6 +727,8 @@ WebUI\\RootFolder=/vuetorrent
 
 // ── Run ──
 
-const appLayer = Layer.mergeAll(BunContext.layer, FetchHttpClient.layer);
+const appLayer = Layer.mergeAll(BunServices.layer, FetchHttpClient.layer);
 
-BunRuntime.runMain(program.pipe(Effect.provide(appLayer)));
+BunRuntime.runMain(
+  program.pipe(Effect.provide(appLayer)) as Effect.Effect<void, unknown>,
+);

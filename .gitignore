@@ -7,3 +7,4 @@ authelia/secrets/
 
 .env
 node_modules/
+.agents

@@ -11,8 +11,7 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 | **Sonarr** | `lscr.io/linuxserver/sonarr` | 8989 | TV series automation — finds, downloads, organizes shows |
 | **Radarr** | `lscr.io/linuxserver/radarr` | 7878 | Movie automation — finds, downloads, organizes movies |
 | **Prowlarr** | `lscr.io/linuxserver/prowlarr` | 9696 | Indexer manager — connects to trackers, syncs to Sonarr/Radarr |
-| **Bazarr** | `lscr.io/linuxserver/bazarr` | 6767 | Subtitle manager — downloads subtitles via Sonarr/Radarr |
-| **Jellyseerr** | `ghcr.io/seerr-team/seerr` | 5055 | Media requests — users request movies/shows, forwards to Sonarr/Radarr |
+| **Seerr** | `ghcr.io/seerr-team/seerr` | 5055 | Media requests — users request movies/shows, forwards to Sonarr/Radarr |
 | **Jackett** | `lscr.io/linuxserver/jackett` | 9117 | Indexer proxy — alternative to Prowlarr's built-in indexers |
 | **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr` | 8191 | Cloudflare bypass — proxy for trackers behind Cloudflare |
 | **Homarr** | `ghcr.io/homarr-labs/homarr` | 7575 | Dashboard — overview of all services with widgets |
@@ -32,7 +31,6 @@ ozarr/
 │   ├── sonarr/                   #   Sonarr database, config.xml
 │   ├── radarr/                   #   Radarr database, config.xml
 │   ├── prowlarr/                 #   Prowlarr database, config.xml
-│   ├── bazarr/                   #   Bazarr database
 │   ├── seerr/                    #   Seerr database
 │   ├── jackett/                  #   Jackett database
 │   ├── flaresolverr/             #   FlareSolverr config
@@ -58,7 +56,7 @@ Following the Servarr Wiki and TRaSH Guides:
 |-----------|-------|---------|
 | **Sonarr / Radarr** | `./data:/data` | Full tree — `torrents/` and `media/` are same filesystem → hardlinks + atomic moves work |
 | **qBittorrent** | `./data/torrents:/data/torrents` | Only needs torrent download folder |
-| **Jellyfin / Bazarr** | `./data/media:/data/media` | Only needs media library |
+| **Jellyfin** | `./data/media:/data/media` | Only needs media library |
 | Others | (none) | API-based, no data access needed |
 
 ## Quick start
@@ -69,9 +67,6 @@ bun install
 
 # Run setup (creates dirs, seeds config, starts containers, configures via API)
 bun setup.ts
-
-# Or pass qBittorrent credentials explicitly
-bun setup.ts admin <password>
 ```
 
 ### Makefile
@@ -142,3 +137,16 @@ All services share the `traefik` external network. Containers resolve each other
 - `UMASK=002` — files `664` (`rw-rw-r--`), dirs `775` (`rwxrwxr-x`)
 - Single shared user approach (TRaSH: "simpler, less strict")
 - Seerr (image: `ghcr.io/seerr-team/seerr`) is rootless by default, runs as `node:node` (1000:1000)
+
+## TODO
+
+- [ ] migrate torrent client to https://github.com/autobrr/qui
+- [ ] auto wizarr setup (pas possible via api je crois car globallement juste des get, donc voir via sqlite)
+- [ ]  jellyfin plugin (faisable automatiquement via api http://localhost:8096/api-docs/swagger/index.html)
+  - [ ] intro skipper
+  - [ ] jellyfin-plugin-cinemamode
+  - [ ] hovertrailer
+- [ ] maintainerr
+- [ ] cleanuparr
+- [ ] notifiarr
+- [ ] seerr pending approval thing

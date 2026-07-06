@@ -1,13 +1,21 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "references": {
-    "effect": {
+    "servarr": {
       "repository": "github.com/Servarr/Wiki",
       "description": "use this whenever there's a question about or how to setup arr service to setup with docker"
     },
-    "effect-accountability": {
+    "ezarr": {
       "repository": "github.com/Luctia/ezarr",
       "description": "use this to see how to setup arr service with docker"
+    },
+    "effect": {
+      "repository": "github.com/Effect-TS/effect-smol",
+      "description": "use this whenever there's a question about effect or you need to know how to do something in effect"
+    },
+    "effect-accountability": {
+      "repository": "github.com/mikearnaldi/accountability",
+      "description": "use this to see how effect is used in a real project"
     }
   },
   "lsp": false

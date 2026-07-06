@@ -1,25 +1,4 @@
 http:
-  middlewares:
-    authelia:
-      forwardAuth:
-        address: 'http://authelia:9091/api/authz/forward-auth'
-        trustForwardHeader: true
-        maxResponseBodySize: 8192
-        authResponseHeaders:
-          - 'Remote-User'
-          - 'Remote-Groups'
-          - 'Remote-Email'
-          - 'Remote-Name'
-    authelia-basic:
-      forwardAuth:
-        address: 'http://authelia:9091/api/authz/forward-auth?auth=basic'
-        trustForwardHeader: true
-        maxResponseBodySize: 8192
-        authResponseHeaders:
-          - 'Remote-User'
-          - 'Remote-Groups'
-          - 'Remote-Email'
-          - 'Remote-Name'
   routers:
     jelly:
       rule: "Host(`j.home.ozaki.one`)"
@@ -93,15 +72,6 @@ http:
           - main: "home.ozaki.one"
             sans:
               - "*.home.ozaki.one"
-    authelia:
-      rule: "Host(`auth.home.ozaki.one`)"
-      service: backend_authelia
-      tls:
-        certResolver: "production"
-        domains:
-          - main: "home.ozaki.one"
-            sans:
-              - "*.home.ozaki.one"
     whoami:
       rule: "Host(`w.home.ozaki.one`)"
       service: backend_whoami
@@ -114,8 +84,6 @@ http:
     whoami-secure:
       rule: "Host(`ws.home.ozaki.one`)"
       service: backend_whoami
-      middlewares:
-        - "authelia@file"
       tls:
         certResolver: "production"
         domains:
@@ -168,10 +136,6 @@ http:
             sans:
               - "*.home.ozaki.one"
   services:
-    backend_authelia:
-      loadBalancer:
-        servers:
-          - url: "http://authelia:9091"
     backend_whoami:
       loadBalancer:
         servers:
