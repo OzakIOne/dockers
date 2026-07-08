@@ -18,4 +18,4 @@ rcsync:
 sqliteweb:
 	uv venv --allow-existing
 	uv pip install sqlite-web
-	uv run sqlite_web ./config/sonarr/sonarr.db ./config/radarr/radarr.db ./config/wizarr/database/database.db
+	uv run sqlite_web ./config/sonarr/sonarr.db ./config/radarr/radarr.db ./config/wizarr/database/database.db ./config/jellyfin/data/data/jellyfin.db ./config/homarr/db/db.sqlite

@@ -279,6 +279,65 @@ export const qbtSetPreferences = (
     }
   });
 
+// ── Jellyfin helpers (uses X-MediaBrowser-Token) ──
+
+export const jellyfinPost = (
+  url: string,
+  key: string,
+  body: unknown | null,
+  debug = false,
+) => {
+  let req = pipe(HttpClientRequest.post(url));
+  req = pipe(req, HttpClientRequest.setHeader("X-MediaBrowser-Token", key));
+  if (body !== null) {
+    req = pipe(req, HttpClientRequest.bodyJsonUnsafe(body));
+  }
+  req = pipe(req, HttpClient.execute, Effect.flatMap(HttpClientResponse.filterStatusOk));
+  if (!debug) return req;
+  return req.pipe(
+    Effect.tap((res) =>
+      Effect.sync(() =>
+        console.error(`  \x1b[33m[debug]\x1b[0m JF POST ${url} → ${res.status}`),
+      ),
+    ),
+    Effect.tapError((e) =>
+      Effect.sync(() =>
+        console.error(
+          `  \x1b[33m[debug]\x1b[0m JF POST ${url} FAILED: ${String(e).slice(0, 120)}`,
+        ),
+      ),
+    ),
+  );
+};
+
+export const jellyfinGetJson = <T>(url: string, key: string, debug = false) =>
+  pipe(
+    jellyfinGet(url, key, debug),
+    Effect.flatMap((res) => res.json),
+    Effect.map((v) => v as T),
+  );
+
+export const jellyfinGet = (url: string, key: string, debug = false) => {
+  let req = pipe(HttpClientRequest.get(url));
+  req = pipe(req, HttpClientRequest.setHeader("X-MediaBrowser-Token", key));
+  req = pipe(req, HttpClient.execute, Effect.flatMap(HttpClientResponse.filterStatusOk));
+  if (!debug) return req;
+  return req.pipe(
+    Effect.tap((res) =>
+      Effect.sync(() =>
+        console.error(`  \x1b[33m[debug]\x1b[0m JF GET ${url} → ${res.status}`),
+      ),
+    ),
+    Effect.tapError((e) =>
+      Effect.sync(() =>
+        console.error(
+          `  \x1b[33m[debug]\x1b[0m JF GET ${url} FAILED: ${String(e).slice(0, 120)}`,
+        ),
+      ),
+    ),
+  );
+};
+
 // Wait for a service with retry (2s interval, up to 90 attempts = 3 min)
 export const waitFor = (url: string, label: string) =>
   Effect.gen(function* () {

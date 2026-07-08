@@ -11,6 +11,8 @@ import { FetchHttpClient } from "effect/unstable/http";
 import { BunServices, BunRuntime } from "@effect/platform-bun";
 import { QBittorrentClient } from "tsarr/qbittorrent";
 import { SeerrClient } from "tsarr/seerr";
+import { SqliteClient } from "@effect/sql-sqlite-node";
+
 import {
   extractHostPort,
   readEnv,
@@ -27,6 +29,8 @@ import {
   homarrPost as baseHomarrPost,
   ignoreFail as baseIgnoreFail,
   qbtSetPreferences as baseQbtSetPreferences,
+  jellyfinPost as baseJellyfinPost,
+  jellyfinGetJson as baseJellyfinGetJson,
   waitFor,
 } from "./utils";
 
@@ -35,12 +39,15 @@ const DEBUG = Bun.env.DEBUG === "true" || Bun.env.LOG_LEVEL === "DEBUG";
 
 const TARGET_SERVICE = (() => {
   const idx = Bun.argv.indexOf("--service");
-  if (idx >= 0 && idx + 1 < Bun.argv.length) return Bun.argv[idx + 1].toLowerCase();
+  if (idx >= 0 && idx + 1 < Bun.argv.length)
+    return Bun.argv[idx + 1].toLowerCase();
   const shortIdx = Bun.argv.indexOf("-s");
-  if (shortIdx >= 0 && shortIdx + 1 < Bun.argv.length) return Bun.argv[shortIdx + 1].toLowerCase();
+  if (shortIdx >= 0 && shortIdx + 1 < Bun.argv.length)
+    return Bun.argv[shortIdx + 1].toLowerCase();
   return null;
 })();
-const shouldRun = (...svcs: string[]) => !TARGET_SERVICE || svcs.includes(TARGET_SERVICE);
+const shouldRun = (...svcs: string[]) =>
+  !TARGET_SERVICE || svcs.includes(TARGET_SERVICE);
 
 // ── Thin wrappers with debug baked in ──
 
@@ -65,6 +72,10 @@ const qbtSetPreferences = (
   password: string,
   prefs: Record<string, unknown>,
 ) => baseQbtSetPreferences(baseUrl, username, password, prefs);
+const jellyfinPost = (url: string, key: string, body: unknown | null = null) =>
+  baseJellyfinPost(url, key, body, DEBUG);
+const jellyfinGetJson = <T>(url: string, key: string) =>
+  baseJellyfinGetJson<T>(url, key, DEBUG);
 
 // ── Env schema ──
 
@@ -81,7 +92,22 @@ const EnvSchema = Schema.Struct({
   RADARR_URL: Schema.NonEmptyString,
   PROWLARR_API_KEY: Schema.String,
   SEERR_API_KEY: Schema.String,
+  JELLYFIN_API_KEY: Schema.String,
 });
+
+const JELLYFIN_PLUGINS = [
+  {
+    name: "Intro Skipper",
+    guid: "c83d86bb-a1e0-4c35-a113-e2101cf4ee6b",
+    repoUrl: "https://intro-skipper.org/manifest.json",
+  },
+  // {
+  //   name: "JellyBridge",
+  //   guid: "8ecc808c-d6e9-432f-9219-b638fbfb37e6",
+  //   repoUrl:
+  //     "https://raw.githubusercontent.com/kinggeorges12/JellyBridge/refs/heads/main/manifest.json",
+  // },
+];
 
 // ── Main program ──
 
@@ -149,7 +175,7 @@ const program = Effect.gen(function* () {
   // ---- Step 1: Create directories ----
   yield* Console.log("Creating directories...");
   yield* Effect.tryPromise(() =>
-    Bun.$`mkdir -p config/{jellyfin,qbittorrent/qBittorrent,sonarr,radarr,homarr,seerr,bazarr,prowlarr,flaresolverr,jackett}`.quiet(),
+    Bun.$`mkdir -p config/{jellyfin,qbittorrent/qBittorrent,sonarr,radarr,homarr,seerr,bazarr,prowlarr,flaresolverr}`.quiet(),
   );
   yield* Effect.tryPromise(() =>
     Bun.$`mkdir -p data/{torrents,media}/{tv,movies,music,books}`.quiet(),
@@ -185,24 +211,70 @@ const program = Effect.gen(function* () {
   if (shouldRun("wizarr")) {
     yield* Console.log("Configuring Wizarr database...");
 
-    yield* ignoreFail(
-      "Wizarr media server",
-      Effect.tryPromise(() =>
-        Bun.$`sqlite3 ./config/wizarr/database/database.db "
-INSERT OR IGNORE INTO media_server (id, name, server_type, url, api_key, verified, created_at, external_url, allow_downloads, allow_live_tv, allow_mobile_uploads)
-VALUES (1, 'Jelly', 'jellyfin', 'http://jellyfin:8096', '69461e3ac3e04fb097e1d75b626412e1', 1, '2026-07-06 00:09:17.980554', '', 0, 0, 0);
-
-DELETE FROM wizard_step WHERE server_type = 'jellyfin';
-INSERT INTO wizard_step (server_type, category, position, title, markdown, requires, require_interaction, created_at, updated_at)
-VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 **Mobile**: [iOS Streamyfin](https://apps.apple.com/us/app/streamyfin/id6593660679) ou [Android Streamyfin](https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin)
-- 📺 **Smart TVs & Streaming Devices**: [Apple TV](https://apps.apple.com/us/app/streamyfin/id6593660679?platform=tv), Fire TV, Roku, Chromecast, Android TV (Recherche jellyfin dans l''app store)
-- 🎮 **Consoles**: PlayStation & Xbox (Recherche jellyfin dans l''app store)
+    const wizarrMarkdown = `- 📱 **Mobile**: [iOS Streamyfin](https://apps.apple.com/us/app/streamyfin/id6593660679) ou [Android Streamyfin](https://play.google.com/store/apps/details?id=com.fredrikburmester.streamyfin)
+- 📺 **Smart TVs & Streaming Devices**: [Apple TV](https://apps.apple.com/us/app/streamyfin/id6593660679?platform=tv), Fire TV, Roku, Chromecast, Android TV (Recherche jellyfin dans l'app store)
+- 🎮 **Consoles**: PlayStation & Xbox (Recherche jellyfin dans l'app store)
 |||
 
-{{ widget:button url=\"https://jellyfin.org/downloads\" text=_(\"⬇️ Download Jellyfin Clients\") }}
+{{ widget:button url="https://jellyfin.org/downloads" text=_("⬇️ Download Jellyfin Clients") }}
 
-{{ widget:button url=\"external_url\" text=_(\"Go to Jellyfin\") }}', '[]', 0, '2026-07-06 00:04:40.531209', '2026-07-06 18:13:12.643772');
-"`.quiet(),
+{{ widget:button url="external_url" text=_("Go to Jellyfin") }}`;
+
+    yield* ignoreFail(
+      "Wizarr media server",
+      pipe(
+        Effect.gen(function* () {
+          const jellyfinKey = yield* pipe(
+            Effect.gen(function* () {
+              const jfClient = yield* SqliteClient.make({
+                filename: "./config/jellyfin/data/data/jellyfin.db",
+                readonly: true,
+              });
+              const rows = yield* jfClient<{ AccessToken: string }>`
+                SELECT AccessToken FROM ApiKeys WHERE Name = ${"Seerr"} LIMIT 1
+              `;
+              return rows[0]?.AccessToken ?? "";
+            }),
+            Effect.scoped,
+            Effect.catchAll(() => Effect.succeed("")),
+          );
+
+          const client = yield* SqliteClient.make({
+            filename: "./config/wizarr/database/database.db",
+          });
+
+          yield* client`
+            INSERT OR IGNORE INTO media_server (id, name, server_type, url, api_key, verified, created_at, external_url, allow_downloads, allow_live_tv, allow_mobile_uploads)
+            VALUES (${1}, ${"Jelly"}, ${"jellyfin"}, ${"http://jellyfin:8096"}, ${jellyfinKey}, ${true}, ${"2026-07-06 00:09:17.980554"}, ${""}, ${false}, ${false}, ${false})
+          `;
+
+          yield* client.unsafe(
+            `DELETE FROM wizard_step WHERE server_type = 'jellyfin'`,
+          );
+
+          yield* client`
+            INSERT INTO wizard_step (server_type, category, position, title, markdown, requires, require_interaction, created_at, updated_at)
+            VALUES (${"jellyfin"}, ${"post_invite"}, ${1}, ${"{{ _('Jellyfin Clients') }}"}, ${wizarrMarkdown}, ${"[]"}, ${false}, ${"2026-07-06 00:04:40.531209"}, ${"2026-07-06 18:13:12.643772"})
+          `;
+
+          if (jellyfinKey) {
+            let env = readEnv();
+            env = setEnvValue(env, "JELLYFIN_API_KEY", jellyfinKey);
+            writeEnv(env);
+            yield* Console.log("  JELLYFIN_API_KEY → .env");
+          }
+        }),
+        Effect.scoped,
+        Effect.provide(
+          Layer.unwrapEffect(
+            Effect.tryPromise(
+              () => import("@effect/experimental/Reactivity"),
+            ).pipe(
+              Effect.map((m) => m.Reactivity.layer),
+              Effect.catchAll(() => Effect.succeed(Layer.empty)),
+            ),
+          ),
+        ),
       ),
     );
 
@@ -211,10 +283,16 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
 
   // ---- Step 5: Wait for services ----
   const waits: Effect.Effect<void>[] = [];
-  if (shouldRun("sonarr", "prowlarr", "seerr")) waits.push(waitFor("http://localhost:8989/ping", "Sonarr"));
-  if (shouldRun("radarr", "prowlarr", "seerr")) waits.push(waitFor("http://localhost:7878/ping", "Radarr"));
-  if (shouldRun("prowlarr")) waits.push(waitFor("http://localhost:9696/ping", "Prowlarr"));
-  if (shouldRun("qbittorrent", "sonarr", "radarr")) waits.push(waitFor("http://localhost:8888/", "qBittorrent"));
+  if (shouldRun("sonarr", "prowlarr", "seerr"))
+    waits.push(waitFor("http://localhost:8989/ping", "Sonarr"));
+  if (shouldRun("radarr", "prowlarr", "seerr"))
+    waits.push(waitFor("http://localhost:7878/ping", "Radarr"));
+  if (shouldRun("prowlarr"))
+    waits.push(waitFor("http://localhost:9696/ping", "Prowlarr"));
+  if (shouldRun("qbittorrent", "sonarr", "radarr"))
+    waits.push(waitFor("http://localhost:8888/", "qBittorrent"));
+  if (shouldRun("jellyfin"))
+    waits.push(waitFor("http://localhost:8096/web/", "Jellyfin"));
 
   if (waits.length > 0) {
     yield* Console.log("Waiting for services...");
@@ -254,19 +332,14 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
       if (shouldRun("qbittorrent")) {
         yield* ignoreFail(
           "qBittorrent preferences",
-          qbtSetPreferences(
-            "http://localhost:8888",
-            QB_USER,
-            qbPass,
-            {
-              alternative_webui_enabled: true,
-              alternative_webui_path: "/vuetorrent",
-              autorun_enabled: true,
-              autorun_program: 'chmod -R 775 "%F/"',
-              save_path: "/data/torrents/",
-              temp_path_enabled: false,
-            },
-          ),
+          qbtSetPreferences("http://localhost:8888", QB_USER, qbPass, {
+            alternative_webui_enabled: true,
+            alternative_webui_path: "/vuetorrent",
+            autorun_enabled: true,
+            autorun_program: 'chmod -R 775 "%F/"',
+            save_path: "/data/torrents/",
+            temp_path_enabled: false,
+          }),
         );
       }
     }
@@ -421,7 +494,7 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
           implementation: "FlareSolverr",
           configContract: "FlareSolverrSettings",
           fields: [{ name: "host", value: "http://flaresolverr:8191" }],
-          tags: [],
+          tags: ["flare"],
         }),
       );
 
@@ -539,13 +612,6 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
           href: "http://seerr:5055",
           pingUrl: "http://seerr:5055",
         },
-        {
-          name: "Jackett",
-          description: "Indexer Proxy",
-          iconUrl: icon("jackett"),
-          href: "http://jackett:9117",
-          pingUrl: "http://jackett:9117",
-        },
       ];
 
       for (const app of apps) {
@@ -598,6 +664,8 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
       ? "  SEERR_API_KEY   → .env"
       : "",
   );
+  const jellyfinKey = getEnvValue(readEnv(), "JELLYFIN_API_KEY");
+  if (jellyfinKey) yield* Console.log("  JELLYFIN_API_KEY → .env");
 
   // Validate final .env state
   yield* Effect.sync(() => {
@@ -643,12 +711,23 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
       yield* Console.log("  Seerr ready");
 
       const existingSonarrs = yield* pipe(
-        apiGetJson<Array<{ name: string; hostname: string; port: number; apiKey: string }>>(
-          "http://localhost:5055/api/v1/settings/sonarr",
-          seerrKey,
-        ),
+        apiGetJson<
+          Array<{
+            name: string;
+            hostname: string;
+            port: number;
+            apiKey: string;
+          }>
+        >("http://localhost:5055/api/v1/settings/sonarr", seerrKey),
         Effect.catchAll(() =>
-          Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
+          Effect.succeed(
+            [] as Array<{
+              name: string;
+              hostname: string;
+              port: number;
+              apiKey: string;
+            }>,
+          ),
         ),
       );
 
@@ -665,31 +744,46 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
       } else {
         yield* ignoreFail(
           "Seerr → Sonarr",
-          apiPostJson("http://localhost:5055/api/v1/settings/sonarr", seerrKey, {
-            name: "Sonarr",
-            hostname: "sonarr",
-            port: 8989,
-            apiKey: sonarrKey,
-            useSsl: false,
-            baseUrl: "",
-            activeProfileId: 1,
-            activeProfileName: "HD-720p/1080p",
-            activeDirectory: "/data/media/tv",
-            is4k: false,
-            enableSeasonFolders: true,
-            isDefault: true,
-            syncEnabled: true,
-          }),
+          apiPostJson(
+            "http://localhost:5055/api/v1/settings/sonarr",
+            seerrKey,
+            {
+              name: "Sonarr",
+              hostname: "sonarr",
+              port: 8989,
+              apiKey: sonarrKey,
+              useSsl: false,
+              baseUrl: "",
+              activeProfileId: 1,
+              activeProfileName: "HD-720p/1080p",
+              activeDirectory: "/data/media/tv",
+              is4k: false,
+              enableSeasonFolders: true,
+              isDefault: true,
+              syncEnabled: true,
+            },
+          ),
         );
       }
 
       const existingRadarrs = yield* pipe(
-        apiGetJson<Array<{ name: string; hostname: string; port: number; apiKey: string }>>(
-          "http://localhost:5055/api/v1/settings/radarr",
-          seerrKey,
-        ),
+        apiGetJson<
+          Array<{
+            name: string;
+            hostname: string;
+            port: number;
+            apiKey: string;
+          }>
+        >("http://localhost:5055/api/v1/settings/radarr", seerrKey),
         Effect.catchAll(() =>
-          Effect.succeed([] as Array<{ name: string; hostname: string; port: number; apiKey: string }>),
+          Effect.succeed(
+            [] as Array<{
+              name: string;
+              hostname: string;
+              port: number;
+              apiKey: string;
+            }>,
+          ),
         ),
       );
 
@@ -706,25 +800,118 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
       } else {
         yield* ignoreFail(
           "Seerr → Radarr",
-          apiPostJson("http://localhost:5055/api/v1/settings/radarr", seerrKey, {
-            name: "Radarr",
-            hostname: "radarr",
-            port: 7878,
-            apiKey: radarrKey,
-            useSsl: false,
-            baseUrl: "",
-            activeProfileId: 1,
-            activeProfileName: "HD-720p/1080p",
-            activeDirectory: "/data/media/movies",
-            is4k: false,
-            minimumAvailability: "released",
-            isDefault: true,
-            syncEnabled: true,
-          }),
+          apiPostJson(
+            "http://localhost:5055/api/v1/settings/radarr",
+            seerrKey,
+            {
+              name: "Radarr",
+              hostname: "radarr",
+              port: 7878,
+              apiKey: radarrKey,
+              useSsl: false,
+              baseUrl: "",
+              activeProfileId: 1,
+              activeProfileName: "HD-720p/1080p",
+              activeDirectory: "/data/media/movies",
+              is4k: false,
+              minimumAvailability: "released",
+              isDefault: true,
+              syncEnabled: true,
+            },
+          ),
         );
       }
 
       yield* Console.log("  Seerr done.");
+    }
+  }
+
+  // ---- Step 13: Configure Jellyfin plugins ----
+  if (shouldRun("jellyfin")) {
+    const jfKey = getEnvValue(readEnv(), "JELLYFIN_API_KEY");
+    if (jfKey) {
+      yield* Console.log("Configuring Jellyfin plugins...");
+
+      const uniqueRepos = [
+        ...new Map(
+          JELLYFIN_PLUGINS.map((p) => [
+            p.repoUrl,
+            { name: p.name, repoUrl: p.repoUrl },
+          ]),
+        ).values(),
+      ];
+
+      for (const repo of uniqueRepos) {
+        yield* ignoreFail(
+          `Jellyfin add repo: ${repo.name}`,
+          Effect.gen(function* () {
+            const existing: Array<{
+              Name: string;
+              Url: string;
+              Enabled: boolean;
+            }> = yield* pipe(
+              jellyfinGetJson<
+                Array<{ Name: string; Url: string; Enabled: boolean }>
+              >("http://localhost:8096/Repositories", jfKey),
+              Effect.catchAll(() =>
+                Effect.succeed(
+                  [] as Array<{ Name: string; Url: string; Enabled: boolean }>,
+                ),
+              ),
+            );
+
+            const already = existing.some((r) => r.Url === repo.repoUrl);
+            if (already) {
+              yield* Console.log(
+                `  Repository "${repo.name}" already registered`,
+              );
+            } else {
+              const updated = [
+                ...existing,
+                { Name: repo.name, Url: repo.repoUrl, Enabled: true },
+              ];
+              yield* jellyfinPost(
+                "http://localhost:8096/Repositories",
+                jfKey,
+                updated,
+              );
+              yield* Console.log(`  Repository "${repo.name}" added`);
+            }
+          }),
+        );
+      }
+
+      for (const plugin of JELLYFIN_PLUGINS) {
+        const encName = encodeURIComponent(plugin.name);
+        yield* ignoreFail(
+          `Jellyfin install ${plugin.name}`,
+          jellyfinPost(
+            `http://localhost:8096/Packages/Installed/${encName}?assemblyGuid=${plugin.guid}&repositoryUrl=${encodeURIComponent(plugin.repoUrl)}`,
+            jfKey,
+            null,
+          ),
+        );
+      }
+
+      yield* Effect.sync(() => {
+        const branding = `<?xml version="1.0" encoding="utf-8"?>
+<BrandingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <LoginDisclaimer />
+  <CustomCss>@import url("https://cdn.jsdelivr.net/gh/lscambo13/ElegantFin@main/Theme/ElegantFin-jellyfin-theme-build-latest-minified.css");@import url("https://cdn.jsdelivr.net/gh/intro-skipper/intro-skipper-css@main/skip-button.min.css");
+
+:root {
+    /* Skip button timing */
+    --skip-hide-duration: 8s;
+}</CustomCss>
+  <SplashscreenEnabled>false</SplashscreenEnabled>
+</BrandingOptions>`;
+        require("fs").writeFileSync("config/jellyfin/branding.xml", branding);
+      });
+      yield* Console.log("  branding.xml written");
+
+      yield* Console.log("  Jellyfin plugins done.");
+    } else {
+      yield* Console.log("  Skipping Jellyfin plugins — no JELLYFIN_API_KEY");
     }
   }
 
@@ -746,7 +933,6 @@ VALUES ('jellyfin', 'post_invite', 1, '{{ _(''Jellyfin Clients'') }}', '- 📱 *
   yield* Console.log("  Bazarr:       http://localhost:6767");
   yield* Console.log("  Homarr:       http://localhost:7575");
   yield* Console.log("  Seerr:        http://localhost:5055");
-  yield* Console.log("  Jackett:      http://localhost:9117");
   yield* Console.log("");
   yield* Console.log("Manual steps:");
   yield* Console.log(

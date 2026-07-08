@@ -12,7 +12,6 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 | **Radarr** | `lscr.io/linuxserver/radarr` | 7878 | Movie automation — finds, downloads, organizes movies |
 | **Prowlarr** | `lscr.io/linuxserver/prowlarr` | 9696 | Indexer manager — connects to trackers, syncs to Sonarr/Radarr |
 | **Seerr** | `ghcr.io/seerr-team/seerr` | 5055 | Media requests — users request movies/shows, forwards to Sonarr/Radarr |
-| **Jackett** | `lscr.io/linuxserver/jackett` | 9117 | Indexer proxy — alternative to Prowlarr's built-in indexers |
 | **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr` | 8191 | Cloudflare bypass — proxy for trackers behind Cloudflare |
 | **Homarr** | `ghcr.io/homarr-labs/homarr` | 7575 | Dashboard — overview of all services with widgets |
 
@@ -32,7 +31,6 @@ ozarr/
 │   ├── radarr/                   #   Radarr database, config.xml
 │   ├── prowlarr/                 #   Prowlarr database, config.xml
 │   ├── seerr/                    #   Seerr database
-│   ├── jackett/                  #   Jackett database
 │   ├── flaresolverr/             #   FlareSolverr config
 │   └── homarr/                   #   Homarr appdata
 └── data/                         # Media and downloads (gitignored)
@@ -100,7 +98,7 @@ Uses Effect for concurrency, retry, and error handling:
 These require your personal credentials or choices:
 
 1. **Homarr API key** — Open `http://localhost:7575`, complete onboarding, then Management → Tools → API → Authentication. Copy the key to `.env` as `HOMARR_API_KEY=<id>.<token>` and re-run `bun setup.ts` to auto-populate apps.
-2. **Set passwords** — Sonarr, Radarr, Prowlarr, Bazarr, Jackett: Settings → General → Authentication
+2. **Set passwords** — Sonarr, Radarr, Prowlarr, Bazarr: Settings → General → Authentication
 3. **Add indexers** — Prowlarr: Settings → Indexers → Add (requires tracker API keys/tokens)
 4. **Jellyfin libraries** — Add libraries pointing to `/data/media/tv` and `/data/media/movies`
 5. **Seerr** — Connect to Sonarr, Radarr, and Jellyfin via Settings → Services
@@ -141,12 +139,12 @@ All services share the `traefik` external network. Containers resolve each other
 ## TODO
 
 - [ ] migrate torrent client to https://github.com/autobrr/qui
-- [ ] auto wizarr setup (pas possible via api je crois car globallement juste des get, donc voir via sqlite)
 - [ ]  jellyfin plugin (faisable automatiquement via api http://localhost:8096/api-docs/swagger/index.html)
   - [ ] intro skipper
-  - [ ] jellyfin-plugin-cinemamode
-  - [ ] hovertrailer
+  - [ ] https://github.com/streamyfin/jellyfin-plugin-streamyfin
 - [ ] maintainerr
 - [ ] cleanuparr
 - [ ] notifiarr
-- [ ] seerr pending approval thing
+- [ ] profilarr backup setup with playwright
+- [ ] https://github.com/fredrikburmester/
+- [ ] bun run setup.ts --backup (genere une backup de chaque service)
