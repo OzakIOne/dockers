@@ -17,6 +17,12 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8096/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:latest
@@ -36,6 +42,12 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8888/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   # qui:
   #   image: ghcr.io/autobrr/qui:latest
@@ -60,6 +72,12 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8989/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   radarr:
     image: lscr.io/linuxserver/radarr:latest
@@ -75,6 +93,12 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7878/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   homarr:
     image: ghcr.io/homarr-labs/homarr:latest
@@ -104,6 +128,15 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      jellyfin:
+        condition: service_healthy
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -118,6 +151,15 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      jellyfin:
+        condition: service_healthy
 
   # https://github.com/ThePhaseless/Byparr/
   # https://github.com/germondai/trawl
@@ -143,6 +185,15 @@ services:
     env_file: .env
     networks:
       - traefik
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      jellyfin:
+        condition: service_healthy
 
   profilarr:
     image: ghcr.io/dictionarry-hub/profilarr:latest
@@ -163,6 +214,14 @@ services:
       - traefik
     depends_on:
       parser:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+      radarr:
+        condition: service_healthy
+      jellyfin:
         condition: service_healthy
 
   maintainerr:
@@ -197,6 +256,12 @@ services:
     container_name: profilarr-parser
     expose:
       - "5000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
 
 networks:
   traefik:
