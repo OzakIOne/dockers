@@ -16,9 +16,9 @@
     },
   },
   "packages": {
-    "@effect/platform-bun": ["@effect/platform-bun@4.0.0-beta.93", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.93" }, "peerDependencies": { "effect": "^4.0.0-beta.93" } }, "sha512-pny29d1NhJ7XLv19as7A0pIZr+QFi5KejnwB/lLW1c8P63t+PDMPEn21toy2vx2yzl9xRTo8heyiXPXRsqPN5w=="],
+    "@effect/platform-bun": ["@effect/platform-bun@4.0.0-beta.94", "", { "dependencies": { "@effect/platform-node-shared": "^4.0.0-beta.94" }, "peerDependencies": { "effect": "^4.0.0-beta.94" } }, "sha512-+jCvnlSlCDmxJ9sv0yw6FQ4wlM8HYzvFugIJ8w2jD85k4iJwS4rQIHiJ9OfUo2hVwaufVS52jOHXaLrBpoq+Yg=="],
 
-    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.93", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.93" } }, "sha512-XUqZ2u5GglBqY8q2jj4Q7GjN5K/enedk8auZM9rY/l5a/myaQTrQp3QnvpIK4/Yg0WFjLGuctGPMKWRk3OLIrA=="],
+    "@effect/platform-node-shared": ["@effect/platform-node-shared@4.0.0-beta.94", "", { "dependencies": { "@types/ws": "^8.18.1", "ws": "^8.20.0" }, "peerDependencies": { "effect": "^4.0.0-beta.94" } }, "sha512-8mCen8dhL4ockkkxevKdFOXqR8sksuZcPwyqkKZv3w30TIdj4TKXG5sQODmpPFI0+/quwm5T78kodqf/QlZwoA=="],
 
     "@effect/sql-sqlite-node": ["@effect/sql-sqlite-node@4.0.0-beta.93", "", { "dependencies": { "better-sqlite3": "^12.9.0" }, "peerDependencies": { "effect": "^4.0.0-beta.93" } }, "sha512-vbrKxueuKubQ6YqVKvX3SBVHKKeUtmZT7dmqwkwz6gs1/M1YYYb9S3Y5DNDReLnwnQUuwDm/kyKRJ3B/NNlb9A=="],
 
@@ -138,7 +138,7 @@
 
     "toml": ["toml@4.1.2", "", {}, "sha512-m0vXfHODcw3gk+KONAOlVQ5yNHc3yS3B1ybM3HS1vqDoS0RWTDDVBVVTYi8hH0k+2OM1vmo9fb1WX9EVqjqfHA=="],
 
-    "tsarr": ["tsarr@2.11.2", "", { "dependencies": { "citty": "^0.2.2", "consola": "^3.4.2" }, "bin": { "tsarr": "dist/cli/index.js" } }, "sha512-BrTqQz45Uh68dkl1udjJgh7Cn6p//jHq5Beu8qs7lBy1WZT0G5uOytBnq99ScsIsvmmUYeeK68qOxOiK9qsDnw=="],
+    "tsarr": ["tsarr@2.11.3", "", { "dependencies": { "citty": "^0.2.2", "consola": "^3.4.2" }, "bin": { "tsarr": "dist/cli/index.js" } }, "sha512-5pf0h5wBfOzOi5e05AQnSM2mBSpZrVhyxkO/8toAiEsKOtzk9rd8z4qW4xUGF4kPuxNLWchGFHoKnCjR2KJlrg=="],
 
     "tunnel-agent": ["tunnel-agent@0.6.0", "", { "dependencies": { "safe-buffer": "^5.0.1" } }, "sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w=="],
 
