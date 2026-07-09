@@ -34,7 +34,7 @@ services:
       - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
       - ./config/qbittorrent:/config
-      - ./data/torrents:/data/torrents
+      - ./data:/data
     ports:
       - "6881:6881"
       - "6881:6881/udp"
@@ -49,14 +49,30 @@ services:
       start_period: 60s
       retries: 5
 
-  # qui:
-  #   image: ghcr.io/autobrr/qui:latest
-  #   container_name: qui
-  #   restart: unless-stopped
-  #   ports:
-  #     - "7476:7476"
-  #   volumes:
-  #     - ./config/qui:/config
+  qui:
+    image: ghcr.io/autobrr/qui:latest
+    container_name: qui
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - UMASK=002
+    ports:
+      - "7476:7476"
+    volumes:
+      - ./config/qui:/config
+      - ./data:/data
+    networks:
+      - traefik
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7476/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -249,6 +265,33 @@ services:
       retries: 3
     networks:
       - traefik
+
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    restart: unless-stopped
+    ports:
+      - "11011:11011"
+    volumes:
+      - ./config/cleanuparr:/config
+      # Unified /data mount so Cleanuparr sees the same paths as qBittorrent/*arrs
+      - ./data:/data
+    environment:
+      - PORT=11011
+      - BASE_PATH=
+      - PUID=1000
+      - PGID=1000
+      - UMASK=022
+      - TZ=Etc/Paris
+    # Health check configuration
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11011/health"]
+      interval: 30s        # Check every 30 seconds
+      timeout: 10s         # Allow up to 10 seconds for response
+      start_period: 30s    # Wait 30 seconds before first check
+      retries: 3           # Mark unhealthy after 3 consecutive failures
+
+
 
   # Optional - only needed for CF/QP testing
   parser:

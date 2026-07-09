@@ -8,12 +8,17 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 |---------|-------|------|-------------|
 | **Jellyfin** | `lscr.io/linuxserver/jellyfin` | 8096 | Media server — streams TV, movies, music, books |
 | **qBittorrent** | `lscr.io/linuxserver/qbittorrent` | 8888 | Torrent client — downloads media, seeds back |
+| **qui** | `ghcr.io/autobrr/qui` | 7476 | Modern qBittorrent WebUI + cross-seed manager (hardlink mode) |
 | **Sonarr** | `lscr.io/linuxserver/sonarr` | 8989 | TV series automation — finds, downloads, organizes shows |
 | **Radarr** | `lscr.io/linuxserver/radarr` | 7878 | Movie automation — finds, downloads, organizes movies |
 | **Prowlarr** | `lscr.io/linuxserver/prowlarr` | 9696 | Indexer manager — connects to trackers, syncs to Sonarr/Radarr |
 | **Seerr** | `ghcr.io/seerr-team/seerr` | 5055 | Media requests — users request movies/shows, forwards to Sonarr/Radarr |
 | **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr` | 8191 | Cloudflare bypass — proxy for trackers behind Cloudflare |
 | **Homarr** | `ghcr.io/homarr-labs/homarr` | 7575 | Dashboard — overview of all services with widgets |
+| **Wizarr** | `ghcr.io/wizarrrr/wizarr` | 5690 | User invitations & onboarding for Jellyfin |
+| **Profilarr** | `ghcr.io/dictionarry-hub/profilarr` | 6868 | Quality profile & custom format manager for Sonarr/Radarr |
+| **Maintainerr** | `ghcr.io/maintainerr/maintainerr` | 6246 | Rule-based media collections & library cleanup |
+| **Cleanuparr** | `ghcr.io/cleanuparr/cleanuparr` | 11011 | Cleans stalled/unlinked downloads, manages seeding & orphans |
 
 ## Folder structure
 
@@ -27,18 +32,25 @@ ozarr/
 ├── config/                       # Per-service runtime configs (gitignored)
 │   ├── jellyfin/                 #   Jellyfin database, cache, metadata
 │   ├── qbittorrent/              #   qBittorrent.conf, categories.json
+│   ├── qui/                      #   qui config, cross-seed settings
 │   ├── sonarr/                   #   Sonarr database, config.xml
 │   ├── radarr/                   #   Radarr database, config.xml
 │   ├── prowlarr/                 #   Prowlarr database, config.xml
 │   ├── seerr/                    #   Seerr database
 │   ├── flaresolverr/             #   FlareSolverr config
-│   └── homarr/                   #   Homarr appdata
+│   ├── homarr/                   #   Homarr appdata
+│   ├── wizarr/                   #   Wizarr database
+│   ├── profilarr/                #   Profilarr config
+│   ├── maintainerr/              #   Maintainerr data
+│   └── cleanuparr/               #   Cleanuparr config
 └── data/                         # Media and downloads (gitignored)
-    ├── torrents/
-    │   ├── tv/                   #   TV torrents (seeding)
-    │   ├── movies/               #   Movie torrents (seeding)
-    │   ├── music/                #   Music torrents (seeding)
-    │   └── books/                #   Book torrents (seeding)
+    ├── downloads/
+    │   ├── torrents/             #   qBittorrent downloads (seeding)
+    │   │   ├── tv/
+    │   │   ├── movies/
+    │   │   ├── music/
+    │   │   └── books/
+    │   └── cross-seed/           #   qui hardlink base dir (cross-seeds)
     └── media/
         ├── tv/                   #   Organized TV library
         ├── movies/               #   Organized movie library
@@ -52,10 +64,14 @@ Following the Servarr Wiki and TRaSH Guides:
 
 | Container | Mount | Purpose |
 |-----------|-------|---------|
-| **Sonarr / Radarr** | `./data:/data` | Full tree — `torrents/` and `media/` are same filesystem → hardlinks + atomic moves work |
-| **qBittorrent** | `./data/torrents:/data/torrents` | Only needs torrent download folder |
+| **Sonarr / Radarr** | `./data:/data` | Full tree — `downloads/` and `media/` are same filesystem → hardlinks + atomic moves work |
+| **qBittorrent** | `./data:/data` | Unified mount — sees `downloads/torrents` + `downloads/cross-seed` on one filesystem (hardlinks) |
+| **qui** | `./data:/data` | Cross-seed hardlink mode needs the same paths qBittorrent uses |
+| **Cleanuparr** | `./data:/data` | Reads files on disk to detect unlinked downloads & orphans |
 | **Jellyfin** | `./data/media:/data/media` | Only needs media library |
 | Others | (none) | API-based, no data access needed |
+
+See [`CROSS_SEED.md`](./CROSS_SEED.md) for the cross-seed (qui) + Cleanuparr unlinked-handling setup.
 
 ## Quick start
 
@@ -83,9 +99,9 @@ Uses Effect for concurrency, retry, and error handling:
 
 | Step | What it does |
 |------|-------------|
-| Create dirs | `data/{torrents,media}/{tv,movies,music,books}` and `config/` per service |
+| Create dirs | `data/downloads/{torrents/{tv,movies,music,books},cross-seed}`, `data/media/{tv,movies,music,books}` and `config/` per service |
 | Permissions | `chmod -R a=,a+rX,u+w,g+w` (Servarr Wiki recommended) |
-| qBittorrent config | Pre-seeds `qBittorrent.conf` (save path, vuetorrent, `chmod` on completion) and `categories.json` (sonarr → tv, radarr → movies) |
+| qBittorrent config | Pre-seeds `qBittorrent.conf` (save path `/data/downloads/torrents`, vuetorrent, `chmod` on completion) and `categories.json` (sonarr → `downloads/torrents/tv`, radarr → `downloads/torrents/movies`) |
 | Start containers | `docker compose up -d` |
 | Wait | Retries with 2s backoff for up to 3 min, all 4 services concurrently |
 | Sonarr API | Root folder `/data/media/tv`, hardlinks enabled, qBittorrent download client |
@@ -138,12 +154,12 @@ All services share the `traefik` external network. Containers resolve each other
 
 ## TODO
 
-- [ ] migrate torrent client to https://github.com/autobrr/qui
+- [x] migrate torrent client to https://github.com/autobrr/qui
+- [x] maintainerr
+- [x] cleanuparr
 - [ ]  jellyfin plugin (faisable automatiquement via api http://localhost:8096/api-docs/swagger/index.html)
   - [ ] intro skipper
   - [ ] https://github.com/streamyfin/jellyfin-plugin-streamyfin
-- [ ] maintainerr
-- [ ] cleanuparr
 - [ ] notifiarr
 - [ ] profilarr backup setup with playwright
 - [ ] https://github.com/fredrikburmester/

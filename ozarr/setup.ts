@@ -178,7 +178,7 @@ const program = Effect.gen(function* () {
     Bun.$`mkdir -p config/{jellyfin,qbittorrent/qBittorrent,sonarr,radarr,homarr,seerr,bazarr,prowlarr,flaresolverr}`.quiet(),
   );
   yield* Effect.tryPromise(() =>
-    Bun.$`mkdir -p data/{torrents,media}/{tv,movies,music,books}`.quiet(),
+    Bun.$`mkdir -p data/downloads/torrents/{tv,movies,music,books} data/downloads/cross-seed data/media/{tv,movies,music,books}`.quiet(),
   );
   yield* Effect.tryPromise(() =>
     Bun.$`chmod -R a=,a+rX,u+w,g+w data/ config/ 2>/dev/null || true`.quiet(),
@@ -193,8 +193,8 @@ const program = Effect.gen(function* () {
         "config/qbittorrent/qBittorrent/categories.json",
         JSON.stringify(
           {
-            sonarr: { savePath: "/data/torrents/tv" },
-            radarr: { savePath: "/data/torrents/movies" },
+            sonarr: { savePath: "/data/downloads/torrents/tv" },
+            radarr: { savePath: "/data/downloads/torrents/movies" },
           },
           null,
           2,
@@ -337,7 +337,7 @@ const program = Effect.gen(function* () {
             alternative_webui_path: "/vuetorrent",
             autorun_enabled: true,
             autorun_program: 'chmod -R 775 "%F/"',
-            save_path: "/data/torrents/",
+            save_path: "/data/downloads/torrents/",
             temp_path_enabled: false,
           }),
         );
