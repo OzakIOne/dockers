@@ -1,6 +1,9 @@
 {
   "name": "ozarr",
   "private": true,
+  "scripts": {
+    "init": "bun run setup.ts"
+  },
   "dependencies": {
     "@effect/platform-bun": "^4.0.0-beta.93",
     "@effect/sql-sqlite-node": "4.0.0-beta.93",
