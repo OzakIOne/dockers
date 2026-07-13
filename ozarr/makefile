@@ -11,12 +11,6 @@ setup:
 backup:
 	bun backup.ts
 
-rcsync:
-	cp ./recyclarrConfig/sonarr.yml ./config/recyclarr/configs/sonarr.yml
-	cp ./recyclarrConfig/radarr.yml ./config/recyclarr/configs/radarr.yml
-	sh ./scripts/rcinit.sh
-	docker compose run --rm recyclarr sync
-
 sqliteweb:
 	uv venv --allow-existing
 	uv pip install sqlite-web

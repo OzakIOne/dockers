@@ -90,8 +90,9 @@ These require your personal credentials or choices:
 4. **Jellyfin libraries** — Add libraries pointing to `/data/media/tv` and `/data/media/movies`
 5. **Seerr** — Connect to Sonarr, Radarr, and Jellyfin via Settings → Services
 6. **qBittorrent** — Get temp password from `docker logs qbittorrent`, change in WebUI
-7. Maintainerr - Rules group
-8. Cleanuparr - Everything, no api support (except easy setups with sqlite writes)
+7. Jellyfin plugins ? For now, maybe automatic later
+8. Maintainerr - Rules group
+9. Cleanuparr - Everything, no api support (except easy setups with sqlite writes)
 
 ## What the API *could* automate but doesn't
 
@@ -100,8 +101,6 @@ These endpoints exist and could be added, but are opinionated or require secrets
 | Service | Endpoint | Why not automated |
 | --------- | ---------- | ------------------- |
 | Prowlarr | `POST /api/v1/indexer` | Requires per-tracker API keys |
-| Sonarr/Radarr | `POST /api/v3/qualityprofile` | Use Recyclarr for TRaSH profiles |
-| Sonarr/Radarr | `POST /api/v3/customformat` | Use Recyclarr instead |
 | Sonarr/Radarr | `PUT /api/v3/config/host` | Auth setup should be manual |
 | All | `POST /api/v3/notification` | User-specific webhooks/tokens |
 | Homarr | `POST /api/apps` | **Automated** — requires HOMARR_API_KEY from onboarding |
@@ -122,18 +121,19 @@ All services share the `traefik` external network. Containers resolve each other
 ## TODO
 
 - [x] migrate torrent client to <https://github.com/autobrr/qui>
-- [x] maintainerr
-- [x] cleanuparr
-- [ ]  jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>)
+- [ ] maintainerr
+- [ ] cleanuparr
+- [ ] notifiarr
+- [ ] tracearr
+- [ ] jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>?)
   - [ ] intro skipper
   - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
-- [ ] notifiarr
-- [ ] profilarr backup setup with playwright
-- [ ] <https://github.com/fredrikburmester/>
-- [ ] bun run setup.ts --backup (genere une backup de chaque service)
+- [ ] profilarr backup setup with playwright ([api maybe?](https://github.com/Dictionarry-Hub/profilarr/tree/develop/src/routes/api/v1/backups))
+- [ ] bun run backup.ts (backup de chaque service)
 - [ ] maintainarr setup.ts
   - [ ] sonarr_settings table
   - [ ] radarr_settings table
   - [ ] settings table
   - [ ] rules table
   - [ ] rule_group
+- [ ]  [streamystats](https://github.com/fredrikburmester/streamystats)
