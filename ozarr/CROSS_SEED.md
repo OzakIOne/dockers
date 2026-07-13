@@ -9,18 +9,6 @@ hardlinks to the media library.
 Everything lives under a single `./data` volume so hardlinks work across
 downloads, cross-seed, and media (they must be on the same filesystem).
 
-```
-/data
-├── downloads
-│   ├── torrents      # qBittorrent downloads
-│   └── cross-seed    # qui hardlink base dir
-└── media
-    ├── movies
-    ├── tv
-    ├── music
-    └── books
-```
-
 Every relevant service mounts `./data:/data`, so all containers see identical
 paths — a hard requirement for both hardlinking (qui) and hardlink detection
 (Cleanuparr).
@@ -40,22 +28,6 @@ The following services now share the unified `./data:/data` mount:
 `qui` also runs with `PUID=1000`, `PGID=1000`, `UMASK=002` so the hardlinks it
 creates match the ownership/permissions of the rest of the stack.
 
-## One-time migration
-
-Run with the stack stopped. The `mv` is a rename **within the same filesystem**,
-so it is instant and preserves existing hardlinks to media:
-
-```bash
-docker compose down
-
-mkdir -p ./data/downloads
-mv ./data/torrents ./data/downloads/torrents
-mkdir -p ./data/downloads/cross-seed
-chown -R 1000:1000 ./data/downloads
-
-docker compose up -d
-```
-
 ## qBittorrent settings
 
 - Default save path → `/data/downloads/torrents`
@@ -64,7 +36,7 @@ docker compose up -d
   already there, so they stay complete)
 - Verify **Sonarr/Radarr → Settings → Download Clients** point at the new root
 
-## qui settings (http://localhost:7476)
+## qui settings (<http://localhost:7476>)
 
 1. **Instance Settings** → enable **Local Filesystem Access** on the qBittorrent
    instance (required for hardlink mode).

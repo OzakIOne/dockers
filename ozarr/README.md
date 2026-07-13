@@ -5,7 +5,7 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 ## Services
 
 | Service | Image | Port | Description |
-|---------|-------|------|-------------|
+| --------- | ------- | ------ | ------------- |
 | **Jellyfin** | `lscr.io/linuxserver/jellyfin` | 8096 | Media server — streams TV, movies, music, books |
 | **qBittorrent** | `lscr.io/linuxserver/qbittorrent` | 8888 | Torrent client — downloads media, seeds back |
 | **qui** | `ghcr.io/autobrr/qui` | 7476 | Modern qBittorrent WebUI + cross-seed manager (hardlink mode) |
@@ -22,40 +22,27 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 
 ## Folder structure
 
-```
+```txt
 ozarr/
-├── .env                          # PUID, PGID, TZ, UMASK, HOMARR_SECRET
-├── docker-compose.yml            # All services in one compose
-├── package.json                  # Bun + Effect dependencies
-├── setup.ts                      # Automated setup script
-├── makefile                      # up / down / setup / pull / log
+├── .env
+├── docker-compose.yml
+├── package.json
+├── setup.ts
+├── makefile
 ├── config/                       # Per-service runtime configs (gitignored)
-│   ├── jellyfin/                 #   Jellyfin database, cache, metadata
-│   ├── qbittorrent/              #   qBittorrent.conf, categories.json
-│   ├── qui/                      #   qui config, cross-seed settings
-│   ├── sonarr/                   #   Sonarr database, config.xml
-│   ├── radarr/                   #   Radarr database, config.xml
-│   ├── prowlarr/                 #   Prowlarr database, config.xml
-│   ├── seerr/                    #   Seerr database
-│   ├── flaresolverr/             #   FlareSolverr config
-│   ├── homarr/                   #   Homarr appdata
-│   ├── wizarr/                   #   Wizarr database
-│   ├── profilarr/                #   Profilarr config
-│   ├── maintainerr/              #   Maintainerr data
-│   └── cleanuparr/               #   Cleanuparr config
 └── data/                         # Media and downloads (gitignored)
     ├── downloads/
-    │   ├── torrents/             #   qBittorrent downloads (seeding)
+    │   ├── torrents/             # qBittorrent downloads (seeding)
     │   │   ├── tv/
     │   │   ├── movies/
     │   │   ├── music/
     │   │   └── books/
-    │   └── cross-seed/           #   qui hardlink base dir (cross-seeds)
+    │   └── cross-seed/           # qui hardlink base dir (cross-seeds)
     └── media/
-        ├── tv/                   #   Organized TV library
-        ├── movies/               #   Organized movie library
-        ├── music/                #   Organized music library
-        └── books/                #   Organized book library
+        ├── tv/
+        ├── movies/
+        ├── music/
+        └── books/
 ```
 
 ## Volume mounts (hardlink-safe)
@@ -63,7 +50,7 @@ ozarr/
 Following the Servarr Wiki and TRaSH Guides:
 
 | Container | Mount | Purpose |
-|-----------|-------|---------|
+| --- | --- | --- |
 | **Sonarr / Radarr** | `./data:/data` | Full tree — `downloads/` and `media/` are same filesystem → hardlinks + atomic moves work |
 | **qBittorrent** | `./data:/data` | Unified mount — sees `downloads/torrents` + `downloads/cross-seed` on one filesystem (hardlinks) |
 | **qui** | `./data:/data` | Cross-seed hardlink mode needs the same paths qBittorrent uses |
@@ -76,34 +63,18 @@ See [`CROSS_SEED.md`](./CROSS_SEED.md) for the cross-seed (qui) + Cleanuparr unl
 ## Quick start
 
 ```bash
-# Install dependencies
 bun install
-
-# Run setup (creates dirs, seeds config, starts containers, configures via API)
 bun setup.ts
-```
-
-### Makefile
-
-```bash
-make setup    # Full setup (bun setup.ts)
-make up       # Start all containers
-make down     # Stop all containers
-make pull     # Update images
-make log      # Tail logs
 ```
 
 ## Setup automation (`setup.ts`)
 
-Uses Effect for concurrency, retry, and error handling:
-
 | Step | What it does |
-|------|-------------|
+| ------ | ------------- |
 | Create dirs | `data/downloads/{torrents/{tv,movies,music,books},cross-seed}`, `data/media/{tv,movies,music,books}` and `config/` per service |
 | Permissions | `chmod -R a=,a+rX,u+w,g+w` (Servarr Wiki recommended) |
 | qBittorrent config | Pre-seeds `qBittorrent.conf` (save path `/data/downloads/torrents`, vuetorrent, `chmod` on completion) and `categories.json` (sonarr → `downloads/torrents/tv`, radarr → `downloads/torrents/movies`) |
 | Start containers | `docker compose up -d` |
-| Wait | Retries with 2s backoff for up to 3 min, all 4 services concurrently |
 | Sonarr API | Root folder `/data/media/tv`, hardlinks enabled, qBittorrent download client |
 | Radarr API | Root folder `/data/media/movies`, hardlinks enabled, qBittorrent download client |
 | Prowlarr API | FlareSolverr proxy, Sonarr + Radarr app connections with full sync |
@@ -119,19 +90,15 @@ These require your personal credentials or choices:
 4. **Jellyfin libraries** — Add libraries pointing to `/data/media/tv` and `/data/media/movies`
 5. **Seerr** — Connect to Sonarr, Radarr, and Jellyfin via Settings → Services
 6. **qBittorrent** — Get temp password from `docker logs qbittorrent`, change in WebUI
-
-### Recommended but optional
-
-6. **Quality profiles** — Use [Recyclarr](https://github.com/recyclarr/recyclarr) to sync TRaSH-recommended quality profiles and custom formats to Sonarr/Radarr automatically
-7. **Notifications** — Configure Discord/Email/etc. in each *arr service → Settings → Connect
-8. **Deluge** — If you prefer Deluge over qBittorrent, a separate `deluge/` compose already exists in this repo
+7. Maintainerr - Rules group
+8. Cleanuparr - Everything, no api support (except easy setups with sqlite writes)
 
 ## What the API *could* automate but doesn't
 
 These endpoints exist and could be added, but are opinionated or require secrets:
 
 | Service | Endpoint | Why not automated |
-|---------|----------|-------------------|
+| --------- | ---------- | ------------------- |
 | Prowlarr | `POST /api/v1/indexer` | Requires per-tracker API keys |
 | Sonarr/Radarr | `POST /api/v3/qualityprofile` | Use Recyclarr for TRaSH profiles |
 | Sonarr/Radarr | `POST /api/v3/customformat` | Use Recyclarr instead |
@@ -154,13 +121,19 @@ All services share the `traefik` external network. Containers resolve each other
 
 ## TODO
 
-- [x] migrate torrent client to https://github.com/autobrr/qui
+- [x] migrate torrent client to <https://github.com/autobrr/qui>
 - [x] maintainerr
 - [x] cleanuparr
-- [ ]  jellyfin plugin (faisable automatiquement via api http://localhost:8096/api-docs/swagger/index.html)
+- [ ]  jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>)
   - [ ] intro skipper
-  - [ ] https://github.com/streamyfin/jellyfin-plugin-streamyfin
+  - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
 - [ ] notifiarr
 - [ ] profilarr backup setup with playwright
-- [ ] https://github.com/fredrikburmester/
+- [ ] <https://github.com/fredrikburmester/>
 - [ ] bun run setup.ts --backup (genere une backup de chaque service)
+- [ ] maintainarr setup.ts
+  - [ ] sonarr_settings table
+  - [ ] radarr_settings table
+  - [ ] settings table
+  - [ ] rules table
+  - [ ] rule_group
