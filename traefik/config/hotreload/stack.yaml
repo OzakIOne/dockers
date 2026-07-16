@@ -9,9 +9,9 @@ http:
           - main: "home.ozaki.one"
             sans:
               - "*.home.ozaki.one"
-    jellyseerr:
-      rule: "Host(`js.home.ozaki.one`)"
-      service: backend_jellyseerr
+    seerr:
+      rule: "Host(`seerr.home.ozaki.one`)"
+      service: backend_seerr
       tls:
         certResolver: "production"
         domains:
@@ -152,7 +152,7 @@ http:
       loadBalancer:
         servers:
           - url: "http://jellyfin:8096"
-    backend_jellyseerr:
+    backend_seerr:
       loadBalancer:
         servers:
           - url: "http://seerr:5055"

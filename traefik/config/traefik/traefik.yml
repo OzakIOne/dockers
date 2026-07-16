@@ -4,23 +4,40 @@ global:
 
 log:
   level: DEBUG # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "common"
+  maxSize: 100
+  maxBackups: 3
+  maxAge: 3
+  compress: true
 
 api:
-  dashboard: true # true by default
+  dashboard: true
   insecure: false # Don't do this in production!
 
 # Entry Points configuration
 # ---
 entryPoints:
   web:
-    address: :80
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
+    address: ":80"
   websecure:
-    address: :443
+    address: ":443"
+    transport:
+      respondingTimeouts:
+        readTimeout: "30m"
+    http3:
+      advertisedPort: 443
+    http:
+      tls:
+        certResolver: "letsencrypt"
+      encodedCharacters:
+        allowEncodedSlash: true
+        allowEncodedQuestionMark: true
+
+experimental:
+  plugins:
+    badger:
+      moduleName: "github.com/fosrl/badger"
+      version: "v1.4.1"
 
 certificatesResolvers:
   # myresolver:
@@ -51,3 +68,8 @@ providers:
     # watch for dynamic configuration changes
     directory: /etc/traefik/hotreload
     watch: true
+  http:
+    endpoint: "http://pangolin:3001/api/v1/traefik-config"
+    pollInterval: "5s"
+  file:
+    filename: "/etc/traefik/dynamic_config.yml"

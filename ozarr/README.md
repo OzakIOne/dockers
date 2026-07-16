@@ -137,3 +137,13 @@ All services share the `traefik` external network. Containers resolve each other
   - [ ] rules table
   - [ ] rule_group
 - [ ]  [streamystats](https://github.com/fredrikburmester/streamystats)
+- [ ] qui api setup http://localhost:7476/api/openapi.json
+  - [ ] settings Arr integration
+  - [ ] orphan scan?
+    - [ ] cross seed setup
+  - [ ] indexers (prowlarr and then activate all)
+- [ ] prowlarr download client enable sequential order
+- [ ] qbittorrent
+  - [ ] default torrent management mode = automatic
+  - [ ] saving management => all relocate torrent
+  - [ ] category sonarr => dl to /data/tv

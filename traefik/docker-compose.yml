@@ -3,16 +3,55 @@ services:
   traefik:
     image: traefik:v3
     container_name: traefik
+    network_mode: "service:gerbil"
     volumes:
       - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik/traefik.yml:/traefik.yml:ro
       - ./config/hotreload/:/etc/traefik/hotreload
     env_file: .env
+    
+
+  pangolin:
+    image: docker.io/fosrl/pangolin:ee-1.20.0
+    container_name: pangolin
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+        reservations:
+          memory: 512m
+    volumes:
+      - ./config:/app/config
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      interval: "10s"
+      timeout: "10s"
+      retries: 15
+
+  gerbil:
+    image: docker.io/fosrl/gerbil:1.4.2
+    container_name: gerbil
+    restart: unless-stopped
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --reachableAt=http://gerbil:3004
+      - --generateAndSaveKeyTo=/var/config/key
+      - --remoteConfig=http://pangolin:3001/api/v1/
+    volumes:
+      - ./config/:/var/config
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
+      - 51820:51820/udp
+      - 21820:21820/udp
+      - 443:443
+      - 443:443/udp # For http3 QUIC if desired
+      - 80:80
     networks:
       - traefik
 

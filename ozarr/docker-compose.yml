@@ -74,6 +74,52 @@ services:
       qbittorrent:
         condition: service_healthy
 
+  qbit_manage:
+    image: ghcr.io/stuffanthings/qbit_manage:latest
+    container_name: qbit_manage
+    env_file: .env
+    environment:
+      - UMASK=${UMASK}
+      # Web API / Web UI
+      - QBT_WEB_SERVER=true
+      - QBT_PORT=8181
+      # Scheduler
+      - QBT_RUN=false
+      - QBT_SCHEDULE=1440
+      - QBT_CONFIG_DIR=/config
+      - QBT_LOGFILE=qbit_manage.log
+      # Command flags
+      - QBT_RECHECK=false
+      - QBT_CAT_UPDATE=false
+      - QBT_TAG_UPDATE=false
+      - QBT_REM_UNREGISTERED=false
+      - QBT_REM_ORPHANED=false
+      - QBT_TAG_TRACKER_ERROR=false
+      - QBT_TAG_NOHARDLINKS=false
+      - QBT_SHARE_LIMITS=false
+      - QBT_SKIP_CLEANUP=false
+      - QBT_DRY_RUN=false
+      - QBT_STARTUP_DELAY=0
+      - QBT_SKIP_QB_VERSION_CHECK=false
+      - QBT_DEBUG=false
+      - QBT_TRACE=false
+      # Logging
+      - QBT_LOG_LEVEL=INFO
+      - QBT_LOG_SIZE=10
+      - QBT_LOG_COUNT=5
+    volumes:
+      - ./config/qbit_manage:/config:rw
+      - ./data:/data:rw # must mirror qbittorrent's ./data:/data mapping
+      - ./config/qbittorrent:/qbittorrent:ro # for save_torrents (BT_backup)
+    ports:
+      - "8181:8181"
+    networks:
+      - traefik
+    restart: unless-stopped
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
@@ -265,33 +311,6 @@ services:
       retries: 3
     networks:
       - traefik
-
-  cleanuparr:
-    image: ghcr.io/cleanuparr/cleanuparr:latest
-    container_name: cleanuparr
-    restart: unless-stopped
-    ports:
-      - "11011:11011"
-    volumes:
-      - ./config/cleanuparr:/config
-      # Unified /data mount so Cleanuparr sees the same paths as qBittorrent/*arrs
-      - ./data:/data
-    environment:
-      - PORT=11011
-      - BASE_PATH=
-      - PUID=1000
-      - PGID=1000
-      - UMASK=022
-      - TZ=Etc/Paris
-    # Health check configuration
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11011/health"]
-      interval: 30s        # Check every 30 seconds
-      timeout: 10s         # Allow up to 10 seconds for response
-      start_period: 30s    # Wait 30 seconds before first check
-      retries: 3           # Mark unhealthy after 3 consecutive failures
-
-
 
   # Optional - only needed for CF/QP testing
   parser:

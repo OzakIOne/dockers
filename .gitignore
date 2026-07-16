@@ -1,10 +1,19 @@
+
+
 */config/
 */data/config/
 */data
 !traefik/config
 traefik/letsencrypt
 authelia/secrets/
+*/backups/
 
 .env
 node_modules/
 .agents
+
+traefik/config/pangolin/config.yml
+traefik/config/pangolin/key
+traefik/config/pangolin/db/
+traefik/config/pangolin/logs/
+
