@@ -318,12 +318,6 @@ services:
     container_name: profilarr-parser
     expose:
       - "5000"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      start_period: 30s
-      retries: 5
 
 networks:
   traefik:

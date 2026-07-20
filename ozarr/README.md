@@ -122,7 +122,6 @@ All services share the `traefik` external network. Containers resolve each other
 
 - [x] migrate torrent client to <https://github.com/autobrr/qui>
 - [ ] maintainerr
-- [ ] cleanuparr
 - [ ] notifiarr
 - [ ] tracearr
 - [ ] jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>?)
@@ -134,10 +133,8 @@ All services share the `traefik` external network. Containers resolve each other
   - [ ] sonarr_settings table
   - [ ] radarr_settings table
   - [ ] settings table
-  - [ ] rules table
-  - [ ] rule_group
 - [ ]  [streamystats](https://github.com/fredrikburmester/streamystats)
-- [ ] qui api setup http://localhost:7476/api/openapi.json
+- [ ] qui api setup <http://localhost:7476/api/openapi.json>
   - [ ] settings Arr integration
   - [ ] orphan scan?
     - [ ] cross seed setup
@@ -147,3 +144,7 @@ All services share the `traefik` external network. Containers resolve each other
   - [ ] default torrent management mode = automatic
   - [ ] saving management => all relocate torrent
   - [ ] category sonarr => dl to /data/tv
+- [ ] for setup.ts set
+- [ ] profilar parser healthcheck not working
+- [ ] put volumes path as env thing
+- [ ] setup .env automatically at first run

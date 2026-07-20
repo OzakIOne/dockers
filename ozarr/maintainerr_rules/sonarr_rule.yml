@@ -1,0 +1,44 @@
+mediaType: SEASONS
+rules:
+  - "0":
+      - firstValue: Seerr.isRequested
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "true"
+      - operator: AND
+        firstValue: Jellyfin.sw_lastWatched
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "60"
+  - "1":
+      - operator: OR
+        firstValue: Jellyfin.sw_viewedEpisodes
+        action: EQUALS
+        customValue:
+          type: number
+          value: 0
+      - operator: AND
+        firstValue: Jellyfin.sw_lastEpisodeAddedAt
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "60"
+      - operator: AND
+        firstValue: Seerr.isRequested
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "true"
+  - "2":
+      - operator: OR
+        firstValue: Seerr.isRequested
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "true"
+      - operator: AND
+        firstValue: Jellyfin.sw_allEpisodesSeenBy
+        action: CONTAINS
+        lastValue: Seerr.addUser

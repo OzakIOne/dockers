@@ -1,0 +1,78 @@
+mediaType: MOVIES
+rules:
+  - "0":
+      - firstValue: Seerr.isRequested
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "true"
+      - operator: AND
+        firstValue: Seerr.mediaAddedAt
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "30"
+      - operator: AND
+        firstValue: Radarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "1":
+      - operator: OR
+        firstValue: Seerr.mediaAddedAt
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "90"
+      - operator: AND
+        firstValue: Seerr.isRequested
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "true"
+      - operator: AND
+        firstValue: Radarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "2":
+      - operator: OR
+        firstValue: Jellyfin.lastViewedAt
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "60"
+      - operator: AND
+        firstValue: Radarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "3":
+      - operator: OR
+        firstValue: Jellyfin.addDate
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "365"
+      - operator: AND
+        firstValue: Radarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "4":
+      - operator: OR
+        firstValue: Jellyfin.addDate
+        action: BEFORE
+        customValue:
+          type: custom_days
+          value: "180"
+      - operator: AND
+        firstValue: Radarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma

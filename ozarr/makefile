@@ -7,9 +7,9 @@ pull:
 log:
 	docker compose logs -f
 setup:
-	bun setup.ts
+	bun run setup.ts
 backup:
-	bun backup.ts
+	bun run backup.ts
 
 sqliteweb:
 	uv venv --allow-existing
