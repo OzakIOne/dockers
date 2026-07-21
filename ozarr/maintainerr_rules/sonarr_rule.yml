@@ -8,37 +8,58 @@ rules:
           value: "true"
       - operator: AND
         firstValue: Jellyfin.sw_lastWatched
+        action: NOT_EXISTS
+      - operator: AND
+        firstValue: Sonarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "1":
+      - firstValue: Seerr.isRequested
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "true"
+      - operator: AND
+        firstValue: Jellyfin.sw_lastWatched
         action: BEFORE
         customValue:
           type: custom_days
-          value: "60"
-  - "1":
-      - operator: OR
-        firstValue: Jellyfin.sw_viewedEpisodes
+          value: "7"
+      - operator: AND
+        firstValue: Sonarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "2":
+      - firstValue: Seerr.isRequested
         action: EQUALS
+        customValue:
+          type: boolean
+          value: "false"
+      - operator: AND
+        firstValue: Jellyfin.sw_lastWatched
+        action: NOT_EXISTS
+      - operator: AND
+        firstValue: Sonarr.tags
+        action: NOT_CONTAINS_PARTIAL
+        customValue:
+          type: text
+          value: Perma
+  - "3":
+      - firstValue: Sonarr.diskspace_remaining_gb
+        action: SMALLER
         customValue:
           type: number
-          value: 0
+          value: 20
       - operator: AND
-        firstValue: Jellyfin.sw_lastEpisodeAddedAt
-        action: BEFORE
-        customValue:
-          type: custom_days
-          value: "60"
+        firstValue: Jellyfin.sw_lastWatched
+        action: NOT_EXISTS
       - operator: AND
-        firstValue: Seerr.isRequested
-        action: EQUALS
+        firstValue: Sonarr.tags
+        action: NOT_CONTAINS_PARTIAL
         customValue:
-          type: boolean
-          value: "true"
-  - "2":
-      - operator: OR
-        firstValue: Seerr.isRequested
-        action: EQUALS
-        customValue:
-          type: boolean
-          value: "true"
-      - operator: AND
-        firstValue: Jellyfin.sw_allEpisodesSeenBy
-        action: CONTAINS
-        lastValue: Seerr.addUser
+          type: text
+          value: Perma

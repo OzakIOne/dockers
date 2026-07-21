@@ -3,13 +3,13 @@ const MANIFEST_URL = "https://intro-skipper.org/manifest.json";
 const REPO_NAME = "Intro Skipper";
 
 const key = (() => {
-  const env = require("fs").readFileSync(".env", "utf-8");
+  const env = require("fs").readFileSync("setup.env", "utf-8");
   const m = env.match(/^JELLYFIN_API_KEY=(.*)$/m);
   return m ? m[1] : "";
 })();
 
 if (!key) {
-  console.error("JELLYFIN_API_KEY not found in .env");
+  console.error("JELLYFIN_API_KEY not found in setup.env");
   process.exit(1);
 }
 

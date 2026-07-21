@@ -128,23 +128,23 @@ All services share the `traefik` external network. Containers resolve each other
   - [ ] intro skipper
   - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
 - [ ] profilarr backup setup with playwright ([api maybe?](https://github.com/Dictionarry-Hub/profilarr/tree/develop/src/routes/api/v1/backups))
-- [ ] bun run backup.ts (backup de chaque service)
-- [ ] maintainarr setup.ts
-  - [ ] sonarr_settings table
-  - [ ] radarr_settings table
-  - [ ] settings table
-- [ ]  [streamystats](https://github.com/fredrikburmester/streamystats)
+- [x] bun run backup.ts (backup de chaque service)
+- [x] maintainarr setup.ts
+  - [x] sonarr_settings table
+  - [x] radarr_settings table
+  - [x] settings table
+- [ ] [streamystats](https://github.com/fredrikburmester/streamystats)
 - [ ] qui api setup <http://localhost:7476/api/openapi.json>
   - [ ] settings Arr integration
   - [ ] orphan scan?
     - [ ] cross seed setup
   - [ ] indexers (prowlarr and then activate all)
-- [ ] prowlarr download client enable sequential order
-- [ ] qbittorrent
-  - [ ] default torrent management mode = automatic
-  - [ ] saving management => all relocate torrent
-  - [ ] category sonarr => dl to /data/tv
-- [ ] for setup.ts set
-- [ ] profilar parser healthcheck not working
-- [ ] put volumes path as env thing
-- [ ] setup .env automatically at first run
+- [x] prowlarr download client enable sequential order
+- [x] qbittorrent
+  - [x] default torrent management mode = automatic
+  - [x] saving management => all relocate torrent
+  - [x] category sonarr => dl to /data/tv
+- [x] profilar parser healthcheck not working
+- [x] put volumes path as env thing
+- [x] setup .env automatically at first run
+- [ ] demander a BadiiiX comment faire pour quun user lambda quand il demande un anime sur seerr ca prends le bon quality profile par defaut, par exemple la les animes quand ya la section avancee par defaut cest 2160p balanced FR

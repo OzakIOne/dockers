@@ -36,7 +36,7 @@ export const extractHostPort = (
 
 export const readEnv = (): string => {
   try {
-    return require("fs").readFileSync(".env", "utf-8");
+    return require("fs").readFileSync("setup.env", "utf-8");
   } catch {
     return "";
   }
@@ -56,7 +56,7 @@ export const setEnvValue = (content: string, key: string, value: string): string
 };
 
 export const writeEnv = (content: string) => {
-  require("fs").writeFileSync(".env", content);
+  require("fs").writeFileSync("setup.env", content);
 };
 
 // ── API key extraction ──

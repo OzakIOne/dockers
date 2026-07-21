@@ -9,6 +9,7 @@ authelia/secrets/
 */backups/
 
 .env
+setup.env
 node_modules/
 .agents
 

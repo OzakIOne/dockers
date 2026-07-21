@@ -1,0 +1,88 @@
+settings:
+  force_auto_tmm: false
+  tracker_error_tag: issue
+  nohardlinks_tag: noHL
+  stalled_tag: stalledDL
+  share_limits_tag: ~share_limit
+  share_limits_min_seeding_time_tag: MinSeedTimeNotReached
+  share_limits_min_num_seeds_tag: MinSeedsNotMet
+  share_limits_last_active_tag: LastActiveLimitNotReached
+  cat_filter_completed: true
+  share_limits_filter_completed: true
+  tag_nohardlinks_filter_completed: true
+  rem_unregistered_filter_completed: false
+  cat_update_all: true
+  disable_qbt_default_share_limits: true
+  tag_stalled_torrents: true
+  rem_unregistered_grace_minutes: 10
+  rem_unregistered_max_torrents: 10
+  private_tag: private
+  force_auto_tmm_ignore_tags: []
+  rem_unregistered_ignore_list: []
+webhooks:
+  error:
+  run_start:
+  run_end:
+  function:
+    recheck:
+    cat_update:
+    tag_update:
+    rem_unregistered:
+    tag_tracker_error:
+    rem_orphaned:
+    tag_nohardlinks:
+    share_limits:
+    cleanup_dirs:
+commands:
+  recheck: false
+  cat_update: false
+  tag_update: false
+  rem_unregistered: true
+  rem_orphaned: true
+  tag_tracker_error: true
+  tag_nohardlinks: true
+  share_limits: true
+  skip_cleanup: false
+  dry_run: false
+  skip_qb_version_check: false
+qbt:
+  host: http://qbittorrent:8888
+  user: admin
+  pass: adminadmin
+cat:
+  sonarr: /data/downloads/torrents/tv
+  radarr: /data/downloads/torrents/movies
+nohardlinks:
+  sonarr:
+    ignore_root_dir: false
+  radarr:
+    ignore_root_dir: true
+directory:
+  root_dir: /data/downloads/torrents
+  recycle_bin: /data/downloads/torrents/.RecycleBin
+  torrents_dir:
+  orphaned_dir: /data/downloads/torrents/orphaned_data
+recyclebin:
+  enabled: true
+  save_torrents: false
+  split_by_category: false
+  empty_after_x_days:
+tracker:
+  other:
+    tag: other
+orphaned:
+  max_orphaned_files_to_delete: 50
+  min_file_age_minutes: 0
+  empty_after_x_days:
+  exclude_patterns:
+apprise:
+cat_change:
+share_limits:
+  delete no HL:
+    priority: 1
+    include_any_tags:
+    - noHL
+    reset_upload_speed_on_unmet_minimums: false
+    cleanup: true
+    resume_torrent_after_change: false
+    add_group_to_tag: false

@@ -7,8 +7,8 @@ services:
     environment:
       - UMASK=${UMASK}
     volumes:
-      - ./config/jellyfin:/config
-      - ./data/media:/data/media
+      - ${CONFIG_DIR}/jellyfin:/config
+      - ${DATA_DIR}/media:/data/media
     ports:
       - "1900:1900/udp"
       - "7359:7359/udp"
@@ -33,8 +33,8 @@ services:
       - WEBUI_PORT=8888
       - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
-      - ./config/qbittorrent:/config
-      - ./data:/data
+      - ${CONFIG_DIR}/qbittorrent:/config
+      - ${DATA_DIR}:/data
     ports:
       - "6881:6881"
       - "6881:6881/udp"
@@ -60,8 +60,8 @@ services:
     ports:
       - "7476:7476"
     volumes:
-      - ./config/qui:/config
-      - ./data:/data
+      - ${CONFIG_DIR}/qui:/config
+      - ${DATA_DIR}:/data
     networks:
       - traefik
     healthcheck:
@@ -74,51 +74,51 @@ services:
       qbittorrent:
         condition: service_healthy
 
-  qbit_manage:
-    image: ghcr.io/stuffanthings/qbit_manage:latest
-    container_name: qbit_manage
-    env_file: .env
-    environment:
-      - UMASK=${UMASK}
-      # Web API / Web UI
-      - QBT_WEB_SERVER=true
-      - QBT_PORT=8181
-      # Scheduler
-      - QBT_RUN=false
-      - QBT_SCHEDULE=1440
-      - QBT_CONFIG_DIR=/config
-      - QBT_LOGFILE=qbit_manage.log
-      # Command flags
-      - QBT_RECHECK=false
-      - QBT_CAT_UPDATE=false
-      - QBT_TAG_UPDATE=false
-      - QBT_REM_UNREGISTERED=false
-      - QBT_REM_ORPHANED=false
-      - QBT_TAG_TRACKER_ERROR=false
-      - QBT_TAG_NOHARDLINKS=false
-      - QBT_SHARE_LIMITS=false
-      - QBT_SKIP_CLEANUP=false
-      - QBT_DRY_RUN=false
-      - QBT_STARTUP_DELAY=0
-      - QBT_SKIP_QB_VERSION_CHECK=false
-      - QBT_DEBUG=false
-      - QBT_TRACE=false
-      # Logging
-      - QBT_LOG_LEVEL=INFO
-      - QBT_LOG_SIZE=10
-      - QBT_LOG_COUNT=5
-    volumes:
-      - ./config/qbit_manage:/config:rw
-      - ./data:/data:rw # must mirror qbittorrent's ./data:/data mapping
-      - ./config/qbittorrent:/qbittorrent:ro # for save_torrents (BT_backup)
-    ports:
-      - "8181:8181"
-    networks:
-      - traefik
-    restart: unless-stopped
-    depends_on:
-      qbittorrent:
-        condition: service_healthy
+  # qbit_manage:
+  #   image: ghcr.io/stuffanthings/qbit_manage:latest
+  #   container_name: qbit_manage
+  #   env_file: .env
+  #   environment:
+  #     - UMASK=${UMASK}
+  #     # Web API / Web UI
+  #     - QBT_WEB_SERVER=true
+  #     - QBT_PORT=8181
+  #     # Scheduler
+  #     - QBT_RUN=false
+  #     - QBT_SCHEDULE=1440
+  #     - QBT_CONFIG_DIR=/config
+  #     - QBT_LOGFILE=qbit_manage.log
+  #     # Command flags
+  #     - QBT_RECHECK=false
+  #     - QBT_CAT_UPDATE=false
+  #     - QBT_TAG_UPDATE=false
+  #     - QBT_REM_UNREGISTERED=false
+  #     - QBT_REM_ORPHANED=false
+  #     - QBT_TAG_TRACKER_ERROR=false
+  #     - QBT_TAG_NOHARDLINKS=false
+  #     - QBT_SHARE_LIMITS=false
+  #     - QBT_SKIP_CLEANUP=false
+  #     - QBT_DRY_RUN=false
+  #     - QBT_STARTUP_DELAY=0
+  #     - QBT_SKIP_QB_VERSION_CHECK=false
+  #     - QBT_DEBUG=false
+  #     - QBT_TRACE=false
+  #     # Logging
+  #     - QBT_LOG_LEVEL=INFO
+  #     - QBT_LOG_SIZE=10
+  #     - QBT_LOG_COUNT=5
+  #   volumes:
+  #     - ${CONFIG_DIR}/qbit_manage:/config:rw
+  #     - ${DATA_DIR}:/data:rw # must mirror qbittorrent's ${DATA_DIR}:/data mapping
+  #     - ${CONFIG_DIR}/qbittorrent:/qbittorrent:ro # for save_torrents (BT_backup)
+  #   ports:
+  #     - "8181:8181"
+  #   networks:
+  #     - traefik
+  #   restart: unless-stopped
+  #   depends_on:
+  #     qbittorrent:
+  #       condition: service_healthy
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
@@ -127,8 +127,8 @@ services:
     environment:
       - UMASK=${UMASK}
     volumes:
-      - ./config/sonarr:/config
-      - ./data:/data
+      - ${CONFIG_DIR}/sonarr:/config
+      - ${DATA_DIR}:/data
     ports:
       - "8989:8989"
     networks:
@@ -148,8 +148,8 @@ services:
     environment:
       - UMASK=${UMASK}
     volumes:
-      - ./config/radarr:/config
-      - ./data:/data
+      - ${CONFIG_DIR}/radarr:/config
+      - ${DATA_DIR}:/data
     ports:
       - "7878:7878"
     networks:
@@ -165,11 +165,10 @@ services:
   homarr:
     image: ghcr.io/homarr-labs/homarr:latest
     container_name: homarr
-    environment:
-      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET}
+    env_file: .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./config/homarr:/appdata
+      - ${CONFIG_DIR}/homarr:/appdata
     ports:
       - "7575:7575"
     networks:
@@ -184,7 +183,7 @@ services:
     environment:
       - LOG_LEVEL=info
     volumes:
-      - ./config/seerr:/app/config
+      - ${CONFIG_DIR}/seerr:/app/config
     ports:
       - "5055:5055"
     networks:
@@ -207,7 +206,7 @@ services:
     environment:
       - UMASK=${UMASK}
     volumes:
-      - ./config/prowlarr:/config
+      - ${CONFIG_DIR}/prowlarr:/config
     ports:
       - "9696:9696"
     networks:
@@ -230,7 +229,7 @@ services:
     container_name: flaresolverr
     env_file: .env
     volumes:
-      - ./config/flaresolverr:/config
+      - ${CONFIG_DIR}/flaresolverr:/config
     ports:
       - "8191:8191"
     networks:
@@ -243,7 +242,7 @@ services:
     ports:
       - 5690:5690
     volumes:
-      - ./config/wizarr:/data
+      - ${CONFIG_DIR}/wizarr:/data
     env_file: .env
     networks:
       - traefik
@@ -263,7 +262,7 @@ services:
     ports:
       - "6868:6868"
     volumes:
-      - ./config/profilarr:/config
+      - ${CONFIG_DIR}/profilarr:/config
     environment:
       - PUID=1000
       - PGID=1000
@@ -292,7 +291,7 @@ services:
     user: 1000:1000
     volumes:
       - type: bind
-        source: ./config/maintainerr
+        source: ${CONFIG_DIR}/maintainerr
         target: /opt/data
     environment:
       - TZ=Europe/Paris
@@ -318,6 +317,19 @@ services:
     container_name: profilarr-parser
     expose:
       - "5000"
+
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    restart: unless-stopped
+    ports:
+      - "11011:11011"
+    volumes:
+      - ./config/cleanuparr:/config
+      - ${DATA_DIR}:/data
+    env_file: .env
+    networks:
+      - traefik
 
 networks:
   traefik:

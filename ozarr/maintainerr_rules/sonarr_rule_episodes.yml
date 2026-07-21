@@ -1,4 +1,4 @@
-mediaType: MOVIES
+mediaType: EPISODES
 rules:
   - "0":
       - firstValue: Seerr.isRequested
@@ -7,10 +7,13 @@ rules:
           type: boolean
           value: "true"
       - operator: AND
-        firstValue: Jellyfin.lastViewedAt
-        action: NOT_EXISTS
+        firstValue: Jellyfin.isWatched
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "false"
       - operator: AND
-        firstValue: Radarr.tags
+        firstValue: Sonarr.tags
         action: NOT_CONTAINS_PARTIAL
         customValue:
           type: text
@@ -28,7 +31,7 @@ rules:
           type: custom_days
           value: "7"
       - operator: AND
-        firstValue: Radarr.tags
+        firstValue: Sonarr.tags
         action: NOT_CONTAINS_PARTIAL
         customValue:
           type: text
@@ -40,40 +43,31 @@ rules:
           type: boolean
           value: "false"
       - operator: AND
-        firstValue: Jellyfin.lastViewedAt
-        action: NOT_EXISTS
+        firstValue: Jellyfin.isWatched
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "false"
       - operator: AND
-        firstValue: Radarr.tags
+        firstValue: Sonarr.tags
         action: NOT_CONTAINS_PARTIAL
         customValue:
           type: text
           value: Perma
   - "3":
-      - firstValue: Radarr.imdbRating
-        action: SMALLER
-        customValue:
-          type: number
-          value: 5
-      - operator: AND
-        firstValue: Jellyfin.lastViewedAt
-        action: NOT_EXISTS
-      - operator: AND
-        firstValue: Radarr.tags
-        action: NOT_CONTAINS_PARTIAL
-        customValue:
-          type: text
-          value: Perma
-  - "4":
-      - firstValue: Radarr.diskspace_remaining_gb
+      - firstValue: Sonarr.diskspace_remaining_gb
         action: SMALLER
         customValue:
           type: number
           value: 20
       - operator: AND
-        firstValue: Jellyfin.lastViewedAt
-        action: NOT_EXISTS
+        firstValue: Jellyfin.isWatched
+        action: EQUALS
+        customValue:
+          type: boolean
+          value: "false"
       - operator: AND
-        firstValue: Radarr.tags
+        firstValue: Sonarr.tags
         action: NOT_CONTAINS_PARTIAL
         customValue:
           type: text

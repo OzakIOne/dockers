@@ -16,7 +16,11 @@
     "effect-accountability": {
       "repository": "github.com/mikearnaldi/accountability",
       "description": "use this to see how effect is used in a real project"
+    },
+    "maintainerr":{
+      "repository": "github.com/Maintainerr/Maintainerr_docs",
+      "description": "Maintainerr documentation repository"
     }
   },
-  "lsp": false
+  "lsp": true
 }

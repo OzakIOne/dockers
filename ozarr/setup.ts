@@ -37,6 +37,15 @@ import {
 const QB_USER = "admin";
 const DEBUG = Bun.env.DEBUG === "true" || Bun.env.LOG_LEVEL === "DEBUG";
 
+// Load setup.env so Bun.env.* works
+try {
+  const setupContent = require("fs").readFileSync("setup.env", "utf-8");
+  for (const line of setupContent.split("\n")) {
+    const m = line.match(/^([A-Z_]+)=(.*)$/);
+    if (m) process.env[m[1]] = m[2];
+  }
+} catch {}
+
 const TARGET_SERVICE = (() => {
   const idx = Bun.argv.indexOf("--service");
   if (idx >= 0 && idx + 1 < Bun.argv.length)
@@ -112,10 +121,32 @@ const JELLYFIN_PLUGINS = [
 // ── Main program ──
 
 const program = Effect.gen(function* () {
-  // ---- Step 0: Populate and validate .env ----
+  // ---- Step 0: Populate and validate env files ----
   const dcContent = yield* Effect.tryPromise(() =>
     Bun.file("docker-compose.yml").text(),
   );
+
+  // Ensure .env (Docker Compose) exists
+  const dcEnvExists = yield* Effect.tryPromise(() =>
+    Bun.file(".env").exists(),
+  ).pipe(Effect.catchAll(() => Effect.succeed(false)));
+  if (!dcEnvExists) {
+    yield* Effect.tryPromise(() =>
+      Bun.$`cp .env.example .env`.quiet(),
+    );
+    yield* Console.log("  Created .env from .env.example");
+  }
+
+  // Ensure setup.env exists
+  const setupEnvExists = yield* Effect.tryPromise(() =>
+    Bun.file("setup.env").exists(),
+  ).pipe(Effect.catchAll(() => Effect.succeed(false)));
+  if (!setupEnvExists) {
+    yield* Effect.tryPromise(() =>
+      Bun.$`cp setup.env.example setup.env`.quiet(),
+    );
+    yield* Console.log("  Created setup.env from setup.env.example");
+  }
 
   let envContent = readEnv();
 
@@ -152,20 +183,29 @@ const program = Effect.gen(function* () {
 
   writeEnv(envContent);
 
-  // Validate parsed env values
+  // Merge .env and setup.env for validation
+  const mergedEnv = (() => {
+    const dc = (() => {
+      try { return require("fs").readFileSync(".env", "utf-8"); } catch { return ""; }
+    })();
+    const setup = envContent;
+    const all = new Set([...dc.split("\n"), ...setup.split("\n")]);
+    return [...all].join("\n");
+  })();
+
   yield* Effect.sync(() => {
     const parsed: Record<string, string> = {};
-    for (const line of envContent.split("\n")) {
+    for (const line of mergedEnv.split("\n")) {
       const m = line.match(/^([A-Z_]+)=(.*)$/);
       if (m) parsed[m[1]] = m[2];
     }
     try {
       Schema.decodeUnknownSync(EnvSchema)(parsed);
-      console.log("  .env validation passed.");
+      console.log("  .env / setup.env validation passed.");
     } catch (e) {
       if (Schema.isSchemaError(e)) {
         console.log(
-          `  Warning: .env validation failed:\n  ${e.message.split("\n").join("\n  ")}`,
+          `  Warning: env validation failed:\n  ${e.message.split("\n").join("\n  ")}`,
         );
       }
       console.log("  Some setup steps may fail.");
@@ -261,7 +301,7 @@ const program = Effect.gen(function* () {
             let env = readEnv();
             env = setEnvValue(env, "JELLYFIN_API_KEY", jellyfinKey);
             writeEnv(env);
-            yield* Console.log("  JELLYFIN_API_KEY → .env");
+            yield* Console.log("  JELLYFIN_API_KEY → setup.env");
           }
         }),
         Effect.scoped,
@@ -293,6 +333,8 @@ const program = Effect.gen(function* () {
     waits.push(waitFor("http://localhost:8888/", "qBittorrent"));
   if (shouldRun("jellyfin"))
     waits.push(waitFor("http://localhost:8096/web/", "Jellyfin"));
+  if (shouldRun("maintainerr"))
+    waits.push(waitFor("http://localhost:6246/", "Maintainerr"));
 
   if (waits.length > 0) {
     yield* Console.log("Waiting for services...");
@@ -339,6 +381,10 @@ const program = Effect.gen(function* () {
             autorun_program: 'chmod -R 775 "%F/"',
             save_path: "/data/downloads/torrents/",
             temp_path_enabled: false,
+            auto_tmm_enabled: true,
+            torrent_changed_tmm_enabled: true,
+            save_path_changed_tmm_enabled: true,
+            category_changed_tmm_enabled: true,
           }),
         );
       }
@@ -544,11 +590,45 @@ const program = Effect.gen(function* () {
         );
       }
 
+      const qbUser = getEnvValue(readEnv(), "QBITTORRENT_USER") || "admin";
+      const qbPassFromEnv = getEnvValue(readEnv(), "QBITTORRENT_PASSWORD");
+      const effectiveQbPass = qbPassFromEnv ?? qbPass;
+
+      if (effectiveQbPass) {
+        yield* ignoreFail(
+          "Prowlarr qBittorrent client",
+          apiPost(
+            "http://localhost:9696/api/v1/downloadclient",
+            prowlarrKey,
+            {
+              enable: true,
+              protocol: "torrent",
+              name: "qBittorrent",
+              implementation: "QBittorrent",
+              configContract: "QBittorrentSettings",
+              fields: [
+                { name: "host", value: "qbittorrent" },
+                { name: "port", value: 8888 },
+                { name: "username", value: qbUser },
+                { name: "password", value: effectiveQbPass },
+                { name: "category", value: "prowlarr" },
+                { name: "sequentialOrder", value: true },
+                { name: "firstAndLast", value: true },
+                { name: "initialState", value: 0 },
+                { name: "useSsl", value: false },
+                { name: "priority", value: 1 },
+                { name: "contentLayout", value: 0 },
+              ],
+            },
+          ),
+        );
+      }
+
       yield* Console.log("  Prowlarr done.");
     }
   }
 
-  // ---- Step 10: Configure Homarr (requires HOMARR_API_KEY in .env) ----
+  // ---- Step 10: Configure Homarr (requires HOMARR_API_KEY in setup.env) ----
   if (shouldRun("homarr")) {
     if (Bun.env.HOMARR_API_KEY) {
       yield* Console.log("Configuring Homarr apps...");
@@ -599,13 +679,6 @@ const program = Effect.gen(function* () {
           pingUrl: "http://qbittorrent:8888",
         },
         {
-          name: "Bazarr",
-          description: "Subtitle Manager",
-          iconUrl: icon("bazarr"),
-          href: "http://bazarr:6767",
-          pingUrl: "http://bazarr:6767",
-        },
-        {
           name: "Seerr",
           description: "Media Requests",
           iconUrl: icon("overseerr"),
@@ -624,16 +697,16 @@ const program = Effect.gen(function* () {
       yield* Console.log("  Homarr done.");
     } else {
       yield* Console.log(
-        "  Skipping Homarr — set HOMARR_API_KEY in .env and re-run",
+        "  Skipping Homarr — set HOMARR_API_KEY in setup.env and re-run",
       );
     }
   }
 
-  // ---- Step 11: Export API keys to .env ----
-  yield* Console.log("Exporting API keys to .env...");
+  // ---- Step 11: Export API keys to setup.env ----
+  yield* Console.log("Exporting API keys to setup.env...");
   const seerrKey = yield* extractSeerrKey();
   yield* Effect.sync(() => {
-    const envPath = ".env";
+    const envPath = "setup.env";
     let env = "";
     try {
       env = require("fs").readFileSync(envPath, "utf-8");
@@ -656,16 +729,16 @@ const program = Effect.gen(function* () {
     require("fs").writeFileSync(envPath, env);
   });
 
-  if (sonarrKey) yield* Console.log("  SONARR_API_KEY  → .env");
-  if (radarrKey) yield* Console.log("  RADARR_API_KEY  → .env");
-  if (prowlarrKey) yield* Console.log("  PROWLARR_API_KEY → .env");
+  if (sonarrKey) yield* Console.log("  SONARR_API_KEY  → setup.env");
+  if (radarrKey) yield* Console.log("  RADARR_API_KEY  → setup.env");
+  if (prowlarrKey) yield* Console.log("  PROWLARR_API_KEY → setup.env");
   yield* Console.log(
     sonarrKey || radarrKey || prowlarrKey || seerrKey
-      ? "  SEERR_API_KEY   → .env"
+      ? "  SEERR_API_KEY   → setup.env"
       : "",
   );
   const jellyfinKey = getEnvValue(readEnv(), "JELLYFIN_API_KEY");
-  if (jellyfinKey) yield* Console.log("  JELLYFIN_API_KEY → .env");
+  if (jellyfinKey) yield* Console.log("  JELLYFIN_API_KEY → setup.env");
 
   // Validate final .env state
   yield* Effect.sync(() => {
@@ -681,7 +754,7 @@ const program = Effect.gen(function* () {
     } catch (e) {
       if (Schema.isSchemaError(e)) {
         console.log(
-          `  Warning: .env validation issues:\n  ${e.message.split("\n").join("\n  ")}`,
+          `  Warning: setup.env validation issues:\n  ${e.message.split("\n").join("\n  ")}`,
         );
       }
     }
@@ -915,6 +988,101 @@ const program = Effect.gen(function* () {
     }
   }
 
+  // ---- Step 14: Configure Maintainerr ----
+  if (shouldRun("maintainerr")) {
+    const envNow = readEnv();
+    const jfKey = getEnvValue(envNow, "JELLYFIN_API_KEY") || "";
+    const seKey = getEnvValue(envNow, "SEERR_API_KEY") || "";
+
+    if (sonarrKey && radarrKey) {
+      yield* Console.log("Configuring Maintainerr...");
+
+      const jellyfinServerName = jfKey
+        ? yield* pipe(
+            Effect.gen(function* () {
+              const info = yield* pipe(
+                jellyfinGetJson<{ ServerName: string }>(
+                  "http://localhost:8096/System/Info",
+                  jfKey,
+                ),
+                Effect.catchAll(() => Effect.succeed({ ServerName: "Jellyfin" })),
+              );
+              return info.ServerName || "Jellyfin";
+            }),
+          )
+        : "Jellyfin";
+
+      const jellyfinUserId = jfKey
+        ? yield* pipe(
+            Effect.gen(function* () {
+              const users = yield* pipe(
+                jellyfinGetJson<
+                  Array<{
+                    Id: string;
+                    Name: string;
+                    Policy?: { IsAdministrator?: boolean };
+                  }>
+                >("http://localhost:8096/Users", jfKey),
+                Effect.catchAll(() => Effect.succeed([])),
+              );
+              const admin = users.find((u) => u.Policy?.IsAdministrator);
+              return (admin ?? users[0])?.Id ?? "";
+            }),
+          )
+        : "";
+
+      yield* ignoreFail(
+        "Maintainerr DB config",
+        pipe(
+          Effect.gen(function* () {
+            const client = yield* SqliteClient.make({
+              filename: "./config/maintainerr/maintainerr.sqlite",
+            });
+
+            yield* client`
+              INSERT OR REPLACE INTO sonarr_settings (id, serverName, url, apiKey)
+              VALUES (${1}, ${"sonarr"}, ${"http://sonarr:8989"}, ${sonarrKey})
+            `;
+
+            yield* client`
+              INSERT OR REPLACE INTO radarr_settings (id, serverName, url, apiKey)
+              VALUES (${1}, ${"radarr"}, ${"http://radarr:7878"}, ${radarrKey})
+            `;
+
+            yield* client`
+              UPDATE settings SET
+                media_server_type = ${"jellyfin"},
+                jellyfin_url = ${"http://jellyfin:8096"},
+                jellyfin_api_key = ${jfKey},
+                jellyfin_user_id = ${jellyfinUserId},
+                jellyfin_server_name = ${jellyfinServerName},
+                seerr_url = ${"http://seerr:5055"},
+                seerr_api_key = ${seKey}
+              WHERE id = ${1}
+            `;
+
+            yield* Console.log("  Maintainerr configured.");
+          }),
+          Effect.scoped,
+          Effect.provide(
+            Layer.unwrapEffect(
+              Effect.tryPromise(
+                () => import("@effect/experimental/Reactivity"),
+              ).pipe(
+                Effect.map((m) => m.Reactivity.layer),
+                Effect.catchAll(() => Effect.succeed(Layer.empty)),
+              ),
+            ),
+          ),
+        ),
+      );
+    } else {
+      yield* Console.log(
+        "  Skipping Maintainerr — missing Sonarr/Radarr API keys",
+      );
+    }
+  }
+
   // ---- Summary ----
   yield* Console.log("");
   yield* Console.log("=== Setup complete ===");
@@ -930,9 +1098,9 @@ const program = Effect.gen(function* () {
   yield* Console.log("  Radarr:       http://localhost:7878");
   yield* Console.log("  Prowlarr:     http://localhost:9696");
   yield* Console.log("  Jellyfin:     http://localhost:8096");
-  yield* Console.log("  Bazarr:       http://localhost:6767");
   yield* Console.log("  Homarr:       http://localhost:7575");
   yield* Console.log("  Seerr:        http://localhost:5055");
+  yield* Console.log("  Maintainerr:  http://localhost:6246");
   yield* Console.log("");
   yield* Console.log("Manual steps:");
   yield* Console.log(
@@ -947,7 +1115,7 @@ const program = Effect.gen(function* () {
       "  4. Generate Homarr API key (Management → Tools → API → Authentication)",
     );
     yield* Console.log(
-      "     Add to .env as HOMARR_API_KEY=<id>.<token>, then re-run setup",
+      "     Add to setup.env as HOMARR_API_KEY=<id>.<token>, then re-run setup",
     );
   }
   yield* Console.log(
