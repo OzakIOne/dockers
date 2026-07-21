@@ -38,7 +38,7 @@ services:
         reservations:
           memory: 512m
     volumes:
-      - ./config:/app/config
+      - ./config/pangolin:/app/config
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
       interval: "10s"

@@ -148,3 +148,4 @@ All services share the `traefik` external network. Containers resolve each other
 - [x] put volumes path as env thing
 - [x] setup .env automatically at first run
 - [ ] demander a BadiiiX comment faire pour quun user lambda quand il demande un anime sur seerr ca prends le bon quality profile par defaut, par exemple la les animes quand ya la section avancee par defaut cest 2160p balanced FR
+- [ ] utiliser tsarr pour setup sonarr et radarr, pour setup sonarr et radarr dans seerr correctement aussi utiliser tsarr pour avoir le typing correctement dans les body
