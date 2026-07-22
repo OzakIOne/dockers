@@ -120,32 +120,17 @@ All services share the `traefik` external network. Containers resolve each other
 
 ## TODO
 
-- [x] migrate torrent client to <https://github.com/autobrr/qui>
-- [ ] maintainerr
 - [ ] notifiarr
 - [ ] tracearr
 - [ ] jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>?)
   - [ ] intro skipper
   - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
 - [ ] profilarr backup setup with playwright ([api maybe?](https://github.com/Dictionarry-Hub/profilarr/tree/develop/src/routes/api/v1/backups))
-- [x] bun run backup.ts (backup de chaque service)
-- [x] maintainarr setup.ts
-  - [x] sonarr_settings table
-  - [x] radarr_settings table
-  - [x] settings table
 - [ ] [streamystats](https://github.com/fredrikburmester/streamystats)
 - [ ] qui api setup <http://localhost:7476/api/openapi.json>
   - [ ] settings Arr integration
   - [ ] orphan scan?
     - [ ] cross seed setup
   - [ ] indexers (prowlarr and then activate all)
-- [x] prowlarr download client enable sequential order
-- [x] qbittorrent
-  - [x] default torrent management mode = automatic
-  - [x] saving management => all relocate torrent
-  - [x] category sonarr => dl to /data/tv
 - [x] profilar parser healthcheck not working
-- [x] put volumes path as env thing
-- [x] setup .env automatically at first run
-- [ ] demander a BadiiiX comment faire pour quun user lambda quand il demande un anime sur seerr ca prends le bon quality profile par defaut, par exemple la les animes quand ya la section avancee par defaut cest 2160p balanced FR
 - [ ] utiliser tsarr pour setup sonarr et radarr, pour setup sonarr et radarr dans seerr correctement aussi utiliser tsarr pour avoir le typing correctement dans les body
