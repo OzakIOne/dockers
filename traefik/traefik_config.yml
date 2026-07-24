@@ -66,8 +66,8 @@ providers:
     watch: true
   file:
     # watch for dynamic configuration changes
-    directory: /etc/traefik/hotreload
-    watch: true
+    - filename: /etc/traefik/stack.yaml
+      watch: true
   http:
     endpoint: "http://pangolin:3001/api/v1/traefik-config"
     pollInterval: "5s"

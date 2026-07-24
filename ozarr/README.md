@@ -126,7 +126,6 @@ All services share the `traefik` external network. Containers resolve each other
   - [ ] intro skipper
   - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
 - [ ] profilarr backup setup with playwright ([api maybe?](https://github.com/Dictionarry-Hub/profilarr/tree/develop/src/routes/api/v1/backups))
-- [ ] [streamystats](https://github.com/fredrikburmester/streamystats)
 - [ ] qui api setup <http://localhost:7476/api/openapi.json>
   - [ ] settings Arr integration
   - [ ] orphan scan?
