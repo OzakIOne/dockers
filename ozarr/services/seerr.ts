@@ -1,50 +1,27 @@
 import { Effect, Schedule, Duration, Console, pipe, Ref } from "effect"
-import { SeerrClient } from "tsarr/seerr"
-import {
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "effect/unstable/http"
+import { SeerrClient, Seerr } from "tsarr"
 import { SetupState } from "./state"
+import { ApiError } from "./errors"
 import type { SonarrSettings, RadarrSettings } from "tsarr/seerr/types"
 
-const apiHeaders = (key: string) => (req: any) =>
-  pipe(req, HttpClientRequest.setHeader("X-Api-Key", key))
-
-const get = (url: string, key: string) =>
-  pipe(
-    HttpClientRequest.get(url),
-    apiHeaders(key),
-    HttpClient.execute,
-    Effect.flatMap(HttpClientResponse.filterStatusOk),
-    Effect.flatMap((res) => Effect.tryPromise(() => res.json())),
+const wrapSeerr = <T>(
+  promise: Promise<{ data?: T; error?: unknown; response?: Response }>,
+  label: string,
+) =>
+  Effect.tryPromise(() => promise).pipe(
+    Effect.flatMap((result) => {
+      if (result.error !== undefined) {
+        return Effect.fail(
+          new ApiError({
+            service: "seerr",
+            status: result.response?.status ?? 0,
+            message: `${label}: ${String(result.error).slice(0, 200)}`,
+          }),
+        )
+      }
+      return Effect.succeed(result.data as T)
+    }),
   )
-
-const post = (url: string, key: string, body: unknown) =>
-  pipe(
-    HttpClientRequest.post(url),
-    apiHeaders(key),
-    HttpClientRequest.bodyJson(body),
-    HttpClient.execute,
-    Effect.flatMap(HttpClientResponse.filterStatusOk),
-    Effect.asVoid,
-  )
-
-export const extractKey = Effect.fn("Seerr.extractKey")(function* () {
-  const ref = yield* SetupState
-  const state = yield* Ref.get(ref)
-  const key = yield* Effect.sync(() => {
-    try {
-      const raw = require("fs").readFileSync("config/seerr/settings.json", "utf-8")
-      const parsed = JSON.parse(raw)
-      return parsed?.main?.apiKey ?? ""
-    } catch {
-      return ""
-    }
-  })
-  yield* Ref.set(ref, { ...state, seerrKey: key })
-  return key
-})
 
 export const configure = Effect.fn("Seerr.configure")(function* () {
   const ref = yield* SetupState
@@ -72,9 +49,10 @@ export const configure = Effect.fn("Seerr.configure")(function* () {
 
   yield* Console.log("  Seerr ready")
 
+  const seerrOpts = { baseUrl, headers: { "X-Api-Key": state.seerrKey } as Record<string, string> }
+
   const existingSonarrs = yield* pipe(
-    get(`${baseUrl}/api/v1/settings/sonarr`, state.seerrKey),
-    Effect.map((v) => v as SonarrSettings[]),
+    wrapSeerr(Seerr.getSettingsSonarr(seerrOpts), "getSettingsSonarr"),
     Effect.catchCause(() => Effect.succeed([] as SonarrSettings[])),
   )
 
@@ -86,21 +64,27 @@ export const configure = Effect.fn("Seerr.configure")(function* () {
     yield* Console.log("  Seerr → Sonarr already configured, skipping")
   } else {
     yield* pipe(
-      post(`${baseUrl}/api/v1/settings/sonarr`, state.seerrKey, {
-        name: "Sonarr",
-        hostname: "sonarr",
-        port: 8989,
-        apiKey: state.sonarrKey,
-        useSsl: false,
-        baseUrl: "",
-        activeProfileId: 1,
-        activeProfileName: "HD-720p/1080p",
-        activeDirectory: "/data/media/tv",
-        is4k: false,
-        enableSeasonFolders: true,
-        isDefault: true,
-        syncEnabled: true,
-      }),
+      wrapSeerr(
+        Seerr.postSettingsSonarr({
+          ...seerrOpts,
+          body: {
+            name: "Sonarr",
+            hostname: "sonarr",
+            port: 8989,
+            apiKey: state.sonarrKey,
+            useSsl: false,
+            baseUrl: "",
+            activeProfileId: 1,
+            activeProfileName: "HD-720p/1080p",
+            activeDirectory: "/data/media/tv",
+            is4k: false,
+            enableSeasonFolders: true,
+            isDefault: true,
+            syncEnabled: true,
+          },
+        }),
+        "postSettingsSonarr",
+      ),
       Effect.catchCause((e) =>
         Console.log(`  Seerr → Sonarr: ${String(e).slice(0, 120)}`),
       ),
@@ -108,8 +92,7 @@ export const configure = Effect.fn("Seerr.configure")(function* () {
   }
 
   const existingRadarrs = yield* pipe(
-    get(`${baseUrl}/api/v1/settings/radarr`, state.seerrKey),
-    Effect.map((v) => v as RadarrSettings[]),
+    wrapSeerr(Seerr.getSettingsRadarr(seerrOpts), "getSettingsRadarr"),
     Effect.catchCause(() => Effect.succeed([] as RadarrSettings[])),
   )
 
@@ -121,21 +104,27 @@ export const configure = Effect.fn("Seerr.configure")(function* () {
     yield* Console.log("  Seerr → Radarr already configured, skipping")
   } else {
     yield* pipe(
-      post(`${baseUrl}/api/v1/settings/radarr`, state.seerrKey, {
-        name: "Radarr",
-        hostname: "radarr",
-        port: 7878,
-        apiKey: state.radarrKey,
-        useSsl: false,
-        baseUrl: "",
-        activeProfileId: 1,
-        activeProfileName: "HD-720p/1080p",
-        activeDirectory: "/data/media/movies",
-        is4k: false,
-        minimumAvailability: "released",
-        isDefault: true,
-        syncEnabled: true,
-      }),
+      wrapSeerr(
+        Seerr.postSettingsRadarr({
+          ...seerrOpts,
+          body: {
+            name: "Radarr",
+            hostname: "radarr",
+            port: 7878,
+            apiKey: state.radarrKey,
+            useSsl: false,
+            baseUrl: "",
+            activeProfileId: 1,
+            activeProfileName: "HD-720p/1080p",
+            activeDirectory: "/data/media/movies",
+            is4k: false,
+            minimumAvailability: "released",
+            isDefault: true,
+            syncEnabled: true,
+          },
+        }),
+        "postSettingsRadarr",
+      ),
       Effect.catchCause((e) =>
         Console.log(`  Seerr → Radarr: ${String(e).slice(0, 120)}`),
       ),

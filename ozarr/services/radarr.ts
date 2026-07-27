@@ -20,22 +20,6 @@ const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Respon
     }),
   )
 
-export const extractKey = Effect.fn("Radarr.extractKey")(function* () {
-  const ref = yield* SetupState
-  const state = yield* Ref.get(ref)
-  const key = yield* Effect.sync(() => {
-    try {
-      const content = require("fs").readFileSync(`${state.cfgDir}/radarr/config.xml`, "utf-8")
-      const m = content.match(/<ApiKey>([^<]+)<\/ApiKey>/)
-      return m ? m[1] : ""
-    } catch {
-      return ""
-    }
-  })
-  yield* Ref.set(ref, { ...state, radarrKey: key })
-  return key
-})
-
 export const configure = Effect.fn("Radarr.configure")(function* () {
   const ref = yield* SetupState
   const state = yield* Ref.get(ref)

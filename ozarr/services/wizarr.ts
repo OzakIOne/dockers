@@ -27,22 +27,13 @@ export const configure = Effect.fn("Wizarr.configure")(function* () {
 
   yield* pipe(
     Effect.gen(function* () {
-      const jfClient = yield* SqliteClient.make({
-        filename: `${state.cfgDir}/jellyfin/data/data/jellyfin.db`,
-        readonly: true,
-      })
-      const rows = yield* jfClient<{ AccessToken: string }>`
-        SELECT AccessToken FROM ApiKeys WHERE Name = ${"Seerr"} LIMIT 1
-      `
-      const jellyfinKey = rows[0]?.AccessToken ?? ""
-
       const client = yield* SqliteClient.make({
         filename: `${state.cfgDir}/wizarr/database/database.db`,
       })
 
       yield* client`
         INSERT OR IGNORE INTO media_server (id, name, server_type, url, api_key, verified, created_at, external_url, allow_downloads, allow_live_tv, allow_mobile_uploads)
-        VALUES (${1}, ${"Jelly"}, ${"jellyfin"}, ${"http://jellyfin:8096"}, ${jellyfinKey}, ${true}, ${"2026-07-06 00:09:17.980554"}, ${""}, ${false}, ${false}, ${false})
+        VALUES (${1}, ${"Jelly"}, ${"jellyfin"}, ${"http://jellyfin:8096"}, ${state.jellyfinKey}, ${true}, ${"2026-07-06 00:09:17.980554"}, ${""}, ${false}, ${false}, ${false})
       `
 
       yield* client.unsafe(
@@ -53,11 +44,6 @@ export const configure = Effect.fn("Wizarr.configure")(function* () {
         INSERT INTO wizard_step (server_type, category, position, title, markdown, requires, require_interaction, created_at, updated_at)
         VALUES (${"jellyfin"}, ${"post_invite"}, ${1}, ${"{{ _('Jellyfin Clients') }}"}, ${wizarrMarkdown}, ${"[]"}, ${false}, ${"2026-07-06 00:04:40.531209"}, ${"2026-07-06 18:13:12.643772"})
       `
-
-      if (jellyfinKey) {
-        yield* Ref.set(ref, { ...state, jellyfinKey })
-        yield* Console.log("  JELLYFIN_API_KEY → setup.env")
-      }
     }),
     Effect.scoped,
     Effect.provide(reactivityLayer),

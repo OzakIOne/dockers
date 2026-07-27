@@ -59,33 +59,6 @@ export const writeEnv = (content: string) => {
   require("fs").writeFileSync("setup.env", content);
 };
 
-// ── API key extraction ──
-
-export const extractApiKey = (xmlPath: string): Effect.Effect<string | null> =>
-  Effect.sync(() => {
-    try {
-      const content = require("fs").readFileSync(xmlPath, "utf-8");
-      const m = content.match(/<ApiKey>([^<]+)<\/ApiKey>/);
-      return m ? m[1] : null;
-    } catch {
-      return null;
-    }
-  });
-
-export const extractSeerrKey = (): Effect.Effect<string | null> =>
-  Effect.sync(() => {
-    try {
-      const raw = require("fs").readFileSync(
-        "config/seerr/settings.json",
-        "utf-8",
-      );
-      const parsed = JSON.parse(raw);
-      return parsed?.main?.apiKey ?? null;
-    } catch {
-      return null;
-    }
-  });
-
 // ── HTTP helpers (accept optional debug flag) ──
 
 export const apiPost = (url: string, key: string, body: unknown, debug = false) => {

@@ -188,18 +188,6 @@ const backupSeerr = Effect.fn("Backup.seerr")(
     ),
 )
 
-const extractApiKey = Effect.fn("Backup.extractApiKey")(function* (xmlPath: string) {
-  return yield* Effect.sync(() => {
-    try {
-      const content = require("fs").readFileSync(xmlPath, "utf-8")
-      const m = content.match(/<ApiKey>([^<]+)<\/ApiKey>/)
-      return m ? m[1] : ""
-    } catch {
-      return ""
-    }
-  })
-})
-
 const readSetupEnv = Effect.fn("Backup.readSetupEnv")(function* () {
   return yield* Effect.sync(() => {
     try { return require("fs").readFileSync("setup.env", "utf-8") } catch { return "" }
@@ -221,9 +209,9 @@ const program = Effect.gen(function* () {
   const radarrUrl = getEnvValue(env, "RADARR_URL") || "http://localhost:7878"
   const prowlarrUrl = getEnvValue(env, "PROWLARR_URL") || "http://localhost:9696"
 
-  const sonarrKey = getEnvValue(env, "SONARR_API_KEY") || (yield* extractApiKey("config/sonarr/config.xml"))
-  const radarrKey = getEnvValue(env, "RADARR_API_KEY") || (yield* extractApiKey("config/radarr/config.xml"))
-  const prowlarrKey = getEnvValue(env, "PROWLARR_API_KEY") || (yield* extractApiKey("config/prowlarr/config.xml"))
+  const sonarrKey = getEnvValue(env, "SONARR_API_KEY") || ""
+  const radarrKey = getEnvValue(env, "RADARR_API_KEY") || ""
+  const prowlarrKey = getEnvValue(env, "PROWLARR_API_KEY") || ""
 
   const services = [
     { name: "sonarr", url: sonarrUrl, key: sonarrKey, apiVersion: "v3" },

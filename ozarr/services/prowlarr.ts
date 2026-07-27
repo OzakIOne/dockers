@@ -20,22 +20,6 @@ const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Respon
     }),
   )
 
-export const extractKey = Effect.fn("Prowlarr.extractKey")(function* () {
-  const ref = yield* SetupState
-  const state = yield* Ref.get(ref)
-  const key = yield* Effect.sync(() => {
-    try {
-      const content = require("fs").readFileSync(`${state.cfgDir}/prowlarr/config.xml`, "utf-8")
-      const m = content.match(/<ApiKey>([^<]+)<\/ApiKey>/)
-      return m ? m[1] : ""
-    } catch {
-      return ""
-    }
-  })
-  yield* Ref.set(ref, { ...state, prowlarrKey: key })
-  return key
-})
-
 export const configure = Effect.fn("Prowlarr.configure")(function* () {
   const ref = yield* SetupState
   const state = yield* Ref.get(ref)

@@ -1,23 +1,7 @@
 import { Effect, Console, pipe, Ref, Layer } from "effect"
 import { SqliteClient } from "@effect/sql-sqlite-node"
-import {
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "effect/unstable/http"
+import { createApi, configureFetcher } from "./__generated/jellyfin-fetcher"
 import { SetupState } from "./state"
-import { ApiError } from "./errors"
-
-const jellyfinGetJson = <T>(url: string, key: string): Effect.Effect<T> =>
-  pipe(
-    HttpClientRequest.get(url),
-    HttpClientRequest.setHeader("X-MediaBrowser-Token", key),
-    HttpClient.execute,
-    Effect.flatMap(HttpClientResponse.filterStatusOk),
-    Effect.flatMap((res) => res.json),
-    Effect.map((v) => v as T),
-    Effect.catchCause(() => Effect.succeed(null as unknown as T)),
-  )
 
 const reactivityLayer = Layer.unwrap(
   Effect.tryPromise(() => import("@effect/experimental/Reactivity")).pipe(
@@ -37,28 +21,28 @@ export const configure = Effect.fn("Maintainerr.configure")(function* () {
 
   yield* Console.log("Configuring Maintainerr...")
 
-  const jellyfinServerName = state.jellyfinKey
-    ? yield* pipe(
-        jellyfinGetJson<{ ServerName: string }>(
-          "http://localhost:8096/System/Info",
-          state.jellyfinKey,
-        ),
-        Effect.map((info) => info?.ServerName || "Jellyfin"),
-      )
-    : "Jellyfin"
+  let jellyfinServerName = "Jellyfin"
+  let jellyfinUserId = ""
 
-  const jellyfinUserId = state.jellyfinKey
-    ? yield* pipe(
-        jellyfinGetJson<
-          Array<{ Id: string; Name: string; Policy?: { IsAdministrator?: boolean } }>
-        >("http://localhost:8096/Users", state.jellyfinKey),
-        Effect.map((users) => {
-          if (!users) return ""
-          const admin = users.find((u) => u.Policy?.IsAdministrator)
-          return (admin ?? users[0])?.Id ?? ""
-        }),
-      )
-    : ""
+  if (state.jellyfinKey) {
+    configureFetcher({ getAuth: () => ({ CustomAuthentication: state.jellyfinKey! }) })
+    const api = createApi("http://localhost:8096")
+
+    const sysInfo = yield* pipe(
+      api.get("/System/Info"),
+      Effect.catchCause(() => Effect.succeed(null)),
+    )
+    if (sysInfo) jellyfinServerName = sysInfo.ServerName ?? "Jellyfin"
+
+    const users = yield* pipe(
+      api.get("/Users"),
+      Effect.catchCause(() => Effect.succeed(null)),
+    )
+    if (users) {
+      const admin = users.find((u: { Policy?: { IsAdministrator?: boolean } }) => u.Policy?.IsAdministrator)
+      jellyfinUserId = (admin ?? users[0])?.Id ?? ""
+    }
+  }
 
   yield* Ref.set(ref, { ...state, jellyfinServerName, jellyfinUserId })
 

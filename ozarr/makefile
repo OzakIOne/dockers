@@ -11,6 +11,9 @@ setup:
 backup:
 	bun run backup.ts
 
+genapi:
+	bun run genapi.ts
+
 sqliteweb:
 	uv venv --allow-existing
 	uv pip install sqlite-web

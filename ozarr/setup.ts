@@ -82,39 +82,9 @@ const program = Effect.gen(function* () {
     if (shouldRun("qbittorrent")) yield* withState(QBittorrent.setPreferences())
   }
 
-  if (shouldRun("sonarr")) yield* withState(Sonarr.extractKey())
-  if (shouldRun("radarr")) yield* withState(Radarr.extractKey())
-  if (shouldRun("prowlarr")) yield* withState(Prowlarr.extractKey())
-  yield* withState(Seerr.extractKey())
-
   if (WITH.sonarr) yield* withState(Sonarr.configure())
   if (WITH.radarr) yield* withState(Radarr.configure())
   if (WITH.prowlarr) yield* withState(Prowlarr.configure())
-
-  yield* Console.log("Exporting API keys to setup.env...")
-  const current = yield* Ref.get(stateRef)
-  yield* Effect.sync(() => {
-    let env = ""
-    try { env = require("fs").readFileSync("setup.env", "utf-8") } catch {}
-    const setOrReplace = (key: string, value: string) => {
-      const line = `${key}=${value}`
-      if (env.includes(`${key}=`)) {
-        env = env.replace(new RegExp(`^${key}=.*$`, "m"), line)
-      } else {
-        env = env.trimEnd() + "\n" + line + "\n"
-      }
-    }
-    setOrReplace("SONARR_API_KEY", current.sonarrKey)
-    setOrReplace("RADARR_API_KEY", current.radarrKey)
-    setOrReplace("PROWLARR_API_KEY", current.prowlarrKey)
-    setOrReplace("SEERR_API_KEY", current.seerrKey)
-    require("fs").writeFileSync("setup.env", env)
-  })
-
-  if (current.sonarrKey) yield* Console.log("  SONARR_API_KEY  → setup.env")
-  if (current.radarrKey) yield* Console.log("  RADARR_API_KEY  → setup.env")
-  if (current.prowlarrKey) yield* Console.log("  PROWLARR_API_KEY → setup.env")
-  if (current.seerrKey) yield* Console.log("  SEERR_API_KEY   → setup.env")
 
   if (WITH.homarr) yield* withState(Homarr.configure())
   if (WITH.seerr) yield* withState(Seerr.configure())

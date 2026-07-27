@@ -12,6 +12,7 @@ authelia/secrets/
 setup.env
 node_modules/
 .agents
+services/__generated/.specs/
 
 traefik/config/pangolin/config.yml
 traefik/config/pangolin/key

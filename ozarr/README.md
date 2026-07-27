@@ -111,13 +111,6 @@ These endpoints exist and could be added, but are opinionated or require secrets
 
 All services share the `traefik` external network. Containers resolve each other by name (e.g., `http://sonarr:8989`). For VPN setups, use `<container>.internal` per the Servarr Wiki recommendation.
 
-## Permissions
-
-- `PUID=1000`, `PGID=1000` — matches host user
-- `UMASK=002` — files `664` (`rw-rw-r--`), dirs `775` (`rwxrwxr-x`)
-- Single shared user approach (TRaSH: "simpler, less strict")
-- Seerr (image: `ghcr.io/seerr-team/seerr`) is rootless by default, runs as `node:node` (1000:1000)
-
 ## TODO
 
 - [ ] notifiarr
@@ -125,11 +118,10 @@ All services share the `traefik` external network. Containers resolve each other
 - [ ] jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>?)
   - [ ] intro skipper
   - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
-- [ ] profilarr backup setup with playwright ([api maybe?](https://github.com/Dictionarry-Hub/profilarr/tree/develop/src/routes/api/v1/backups))
 - [ ] qui api setup <http://localhost:7476/api/openapi.json>
   - [ ] settings Arr integration
   - [ ] orphan scan?
     - [ ] cross seed setup
   - [ ] indexers (prowlarr and then activate all)
 - [x] profilar parser healthcheck not working
-- [ ] utiliser tsarr pour setup sonarr et radarr, pour setup sonarr et radarr dans seerr correctement aussi utiliser tsarr pour avoir le typing correctement dans les body
+- [ ] vpn for torrent

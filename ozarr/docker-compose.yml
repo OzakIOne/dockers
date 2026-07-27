@@ -4,8 +4,6 @@ services:
     image: lscr.io/linuxserver/jellyfin:latest
     container_name: jellyfin
     env_file: .env
-    environment:
-      - UMASK=${UMASK}
     volumes:
       - ${CONFIG_DIR}/jellyfin:/config
       - ${DATA_DIR}/media:/data/media
@@ -28,9 +26,7 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     env_file: .env
-    environment:
-      - UMASK=${UMASK}
-      - WEBUI_PORT=8888
+      - WEBUI_PORT=6767
       - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
       - ${CONFIG_DIR}/qbittorrent:/config
@@ -38,7 +34,7 @@ services:
     ports:
       - "6881:6881"
       - "6881:6881/udp"
-      - "8888:8888"
+      - "6767:6767"
     networks:
       - traefik
     restart: unless-stopped
@@ -53,10 +49,7 @@ services:
     image: ghcr.io/autobrr/qui:latest
     container_name: qui
     restart: unless-stopped
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - UMASK=002
+    env_file: .env
     ports:
       - "7476:7476"
     volumes:
@@ -70,62 +63,14 @@ services:
       timeout: 10s
       start_period: 60s
       retries: 5
-    depends_on:
-      qbittorrent:
-        condition: service_healthy
-
-  # qbit_manage:
-  #   image: ghcr.io/stuffanthings/qbit_manage:latest
-  #   container_name: qbit_manage
-  #   env_file: .env
-  #   environment:
-  #     - UMASK=${UMASK}
-  #     # Web API / Web UI
-  #     - QBT_WEB_SERVER=true
-  #     - QBT_PORT=8181
-  #     # Scheduler
-  #     - QBT_RUN=false
-  #     - QBT_SCHEDULE=1440
-  #     - QBT_CONFIG_DIR=/config
-  #     - QBT_LOGFILE=qbit_manage.log
-  #     # Command flags
-  #     - QBT_RECHECK=false
-  #     - QBT_CAT_UPDATE=false
-  #     - QBT_TAG_UPDATE=false
-  #     - QBT_REM_UNREGISTERED=false
-  #     - QBT_REM_ORPHANED=false
-  #     - QBT_TAG_TRACKER_ERROR=false
-  #     - QBT_TAG_NOHARDLINKS=false
-  #     - QBT_SHARE_LIMITS=false
-  #     - QBT_SKIP_CLEANUP=false
-  #     - QBT_DRY_RUN=false
-  #     - QBT_STARTUP_DELAY=0
-  #     - QBT_SKIP_QB_VERSION_CHECK=false
-  #     - QBT_DEBUG=false
-  #     - QBT_TRACE=false
-  #     # Logging
-  #     - QBT_LOG_LEVEL=INFO
-  #     - QBT_LOG_SIZE=10
-  #     - QBT_LOG_COUNT=5
-  #   volumes:
-  #     - ${CONFIG_DIR}/qbit_manage:/config:rw
-  #     - ${DATA_DIR}:/data:rw # must mirror qbittorrent's ${DATA_DIR}:/data mapping
-  #     - ${CONFIG_DIR}/qbittorrent:/qbittorrent:ro # for save_torrents (BT_backup)
-  #   ports:
-  #     - "8181:8181"
-  #   networks:
-  #     - traefik
-  #   restart: unless-stopped
-  #   depends_on:
-  #     qbittorrent:
-  #       condition: service_healthy
+    # depends_on:
+    #   qbittorrent:
+    #     condition: service_healthy
 
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
     env_file: .env
-    environment:
-      - UMASK=${UMASK}
     volumes:
       - ${CONFIG_DIR}/sonarr:/config
       - ${DATA_DIR}:/data
@@ -145,8 +90,6 @@ services:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     env_file: .env
-    environment:
-      - UMASK=${UMASK}
     volumes:
       - ${CONFIG_DIR}/radarr:/config
       - ${DATA_DIR}:/data
@@ -166,6 +109,8 @@ services:
     image: ghcr.io/homarr-labs/homarr:latest
     container_name: homarr
     env_file: .env
+    # environment:
+    #   - BASE_URL=http://homarr.example.com
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${CONFIG_DIR}/homarr:/appdata
@@ -179,6 +124,7 @@ services:
     image: ghcr.io/seerr-team/seerr:latest
     init: true
     container_name: seerr
+    user: 1000:1000
     env_file: .env
     environment:
       - LOG_LEVEL=debug
@@ -203,8 +149,6 @@ services:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     env_file: .env
-    environment:
-      - UMASK=${UMASK}
     volumes:
       - ${CONFIG_DIR}/prowlarr:/config
     ports:
@@ -263,10 +207,8 @@ services:
       - "6868:6868"
     volumes:
       - ${CONFIG_DIR}/profilarr:/config
+    env_file: .env
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
       # Uncomment ORIGIN if you use a reverse proxy to access your containers.
       #- ORIGIN=https://profilarr.yourdomain.com
       - PARSER_HOST=parser
@@ -286,19 +228,13 @@ services:
         condition: service_healthy
 
   maintainerr:
-    image: ghcr.io/maintainerr/maintainerr:latest # or ghcr.io/maintainerr/maintainerr:development (to test unreleased changes)
-    container_name: maintainerr
+    image: ghcr.io/maintainerr/maintainerr:latest
     user: 1000:1000
     volumes:
       - type: bind
         source: ${CONFIG_DIR}/maintainerr
         target: /opt/data
-    environment:
-      - TZ=Europe/Paris
-    #      - BASE_PATH=/maintainerr # uncomment if you're serving maintainerr from a subdirectory
-    #      - UI_HOSTNAME=:: # uncomment if you want to listen on IPv6 instead (default 0.0.0.0)
-    #      - UI_PORT=6247 # uncomment to change the UI port (default 6246)
-    #      - GITHUB_TOKEN=ghp_yourtoken # Optional: GitHub Personal Access Token for higher API rate limits (60/hr without, 5000/hr with token)
+    env_file: .env
     ports:
       - 6246:6246
     restart: unless-stopped
@@ -336,7 +272,7 @@ services:
   #   image: ghcr.io/connorgallopo/tracearr:latest
   #   container_name: tracearr
   #   ports:
-  #     - "${PORT:-3000}:3000"
+  #     - "3010:3000"
   #   environment:
   #     - NODE_ENV=production
   #     - PORT=3000

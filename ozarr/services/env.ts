@@ -27,7 +27,7 @@ const EnvSchema = Schema.Struct({
   PGID: Schema.String,
   TZ: Schema.String,
   UMASK: Schema.String,
-  HOMARR_SECRET: Schema.String,
+  SECRET_ENCRYPTION_KEY: Schema.String,
   HOMARR_API_KEY: Schema.String,
   SONARR_API_KEY: Schema.NonEmptyString,
   SONARR_URL: Schema.NonEmptyString,
@@ -101,6 +101,11 @@ export const buildInitialData = Effect.fn("Env.buildInitialData")(function* () {
   const prowlarrUrl = "http://localhost:9696"
   const debug = Bun.env.DEBUG === "true" || Bun.env.LOG_LEVEL === "DEBUG"
   const homarrKey = Bun.env.HOMARR_API_KEY || getEnvValue(setupContent, "HOMARR_API_KEY") || ""
+  const sonarrKey = getEnvValue(setupContent, "SONARR_API_KEY") || ""
+  const radarrKey = getEnvValue(setupContent, "RADARR_API_KEY") || ""
+  const prowlarrKey = getEnvValue(setupContent, "PROWLARR_API_KEY") || ""
+  const seerrKey = getEnvValue(setupContent, "SEERR_API_KEY") || ""
+  const jellyfinKey = getEnvValue(setupContent, "JELLYFIN_API_KEY") || ""
 
   yield* Effect.sync(() => {
     const dc = envContent
@@ -127,11 +132,11 @@ export const buildInitialData = Effect.fn("Env.buildInitialData")(function* () {
     sonarrUrl,
     radarrUrl,
     prowlarrUrl,
-    sonarrKey: "",
-    radarrKey: "",
-    prowlarrKey: "",
-    seerrKey: "",
-    jellyfinKey: "",
+    sonarrKey,
+    radarrKey,
+    prowlarrKey,
+    seerrKey,
+    jellyfinKey,
     homarrKey,
     qbUser: "admin",
     qbPass: "",

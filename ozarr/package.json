@@ -9,7 +9,8 @@
     "@effect/platform-bun": "^4.0.0-beta.94",
     "@effect/sql-sqlite-node": "4.0.0-beta.93",
     "effect": "4.0.0-beta.93",
-    "tsarr": "^2.11.3"
+    "tsarr": "^2.11.3",
+    "typed-openapi": "^3.1.0"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14"

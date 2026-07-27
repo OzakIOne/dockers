@@ -1,21 +1,6 @@
 import { Effect, Console, pipe, Ref } from "effect"
-import {
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "effect/unstable/http"
+import { createApi, configureFetcher } from "./__generated/homarr-fetcher"
 import { SetupState } from "./state"
-import { ApiError } from "./errors"
-
-const homarrPost = (url: string, body: unknown, key: string): Effect.Effect<void> =>
-  pipe(
-    HttpClientRequest.post(url),
-    HttpClientRequest.setHeader("ApiKey", key),
-    HttpClientRequest.bodyJson(body),
-    HttpClient.execute,
-    Effect.asVoid,
-    Effect.catchCause(() => Effect.void),
-  )
 
 const icon = (slug: string) =>
   `https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/${slug}.png`
@@ -40,9 +25,12 @@ export const configure = Effect.fn("Homarr.configure")(function* () {
 
   yield* Console.log("Configuring Homarr apps...")
 
+  configureFetcher({ getAuth: () => ({ apikey: state.homarrKey! }) })
+  const api = createApi("http://localhost:7575")
+
   for (const app of APPS) {
     yield* pipe(
-      homarrPost("http://localhost:7575/api/apps", app, state.homarrKey),
+      api.post("/api/apps", { body: app }),
       Effect.catchCause(() =>
         state.debug
           ? Console.log(`  \x1b[33m[debug]\x1b[0m Homarr app ${app.name} may already exist`)

@@ -1,39 +1,6 @@
 import { Effect, Console, pipe, Ref } from "effect"
-import {
-  HttpClient,
-  HttpClientRequest,
-  HttpClientResponse,
-} from "effect/unstable/http"
+import { createApi, configureFetcher } from "./__generated/jellyfin-fetcher"
 import { SetupState } from "./state"
-import { ApiError } from "./errors"
-
-const jellyfinGetJson = <T>(url: string, key: string): Effect.Effect<T, ApiError> =>
-  pipe(
-    HttpClientRequest.get(url),
-    HttpClientRequest.setHeader("X-MediaBrowser-Token", key),
-    HttpClient.execute,
-    Effect.flatMap(HttpClientResponse.filterStatusOk),
-    Effect.flatMap((res) => res.json),
-    Effect.map((v) => v as T),
-    Effect.mapError(
-      (e) => new ApiError({ service: "jellyfin", status: 0, message: String(e).slice(0, 200) }),
-    ),
-  )
-
-const jellyfinPost = (url: string, key: string, body: unknown | null): Effect.Effect<void, ApiError> => {
-  const req = pipe(HttpClientRequest.post(url))
-  const withAuth = pipe(req, HttpClientRequest.setHeader("X-MediaBrowser-Token", key))
-  const withBody = body !== null ? pipe(withAuth, HttpClientRequest.bodyJson(body)) : withAuth
-  return pipe(
-    withBody,
-    HttpClient.execute,
-    Effect.flatMap(HttpClientResponse.filterStatusOk),
-    Effect.asVoid,
-    Effect.mapError(
-      (e) => new ApiError({ service: "jellyfin", status: 0, message: String(e).slice(0, 200) }),
-    ),
-  )
-}
 
 const JELLYFIN_PLUGINS = [
   {
@@ -55,6 +22,9 @@ export const configure = Effect.fn("Jellyfin.configure")(function* () {
 
   yield* Console.log("Configuring Jellyfin plugins...")
 
+  configureFetcher({ getAuth: () => ({ CustomAuthentication: jfKey }) })
+  const api = createApi("http://localhost:8096")
+
   const uniqueRepos = [
     ...new Map(
       JELLYFIN_PLUGINS.map((p) => [p.repoUrl, { name: p.name, repoUrl: p.repoUrl }]),
@@ -65,21 +35,16 @@ export const configure = Effect.fn("Jellyfin.configure")(function* () {
     yield* pipe(
       Effect.gen(function* () {
         const existing = yield* pipe(
-          jellyfinGetJson<Array<{ Name: string; Url: string; Enabled: boolean }>>(
-            "http://localhost:8096/Repositories",
-            jfKey,
-          ),
-          Effect.catchCause(() =>
-            Effect.succeed([] as Array<{ Name: string; Url: string; Enabled: boolean }>),
-          ),
+          api.get("/Repositories"),
+          Effect.catchCause(() => Effect.succeed([])),
         )
 
-        const already = existing.some((r) => r.Url === repo.repoUrl)
+        const already = existing.some((r: { Url?: string | null }) => r.Url === repo.repoUrl)
         if (already) {
           yield* Console.log(`  Repository "${repo.name}" already registered`)
         } else {
           const updated = [...existing, { Name: repo.name, Url: repo.repoUrl, Enabled: true }]
-          yield* jellyfinPost("http://localhost:8096/Repositories", jfKey, updated)
+          yield* api.post("/Repositories", { body: updated })
           yield* Console.log(`  Repository "${repo.name}" added`)
         }
       }),
@@ -90,13 +55,14 @@ export const configure = Effect.fn("Jellyfin.configure")(function* () {
   }
 
   for (const plugin of JELLYFIN_PLUGINS) {
-    const encName = encodeURIComponent(plugin.name)
     yield* pipe(
-      jellyfinPost(
-        `http://localhost:8096/Packages/Installed/${encName}?assemblyGuid=${plugin.guid}&repositoryUrl=${encodeURIComponent(plugin.repoUrl)}`,
-        jfKey,
-        null,
-      ),
+      api.post("/Packages/Installed/{name}", {
+        path: { name: plugin.name },
+        query: {
+          assemblyGuid: plugin.guid,
+          repositoryUrl: plugin.repoUrl,
+        },
+      }),
       Effect.catchCause((e) =>
         Console.log(`  Jellyfin install ${plugin.name}: ${String(e).slice(0, 120)}`),
       ),
