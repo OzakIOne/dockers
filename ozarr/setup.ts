@@ -14,6 +14,7 @@ import * as Seerr from "./services/seerr"
 import * as Jellyfin from "./services/jellyfin"
 import * as Homarr from "./services/homarr"
 import * as Maintainerr from "./services/maintainerr"
+import * as Qui from "./services/qui"
 
 const TARGET_SERVICE = (() => {
   const idx = Bun.argv.indexOf("--service")
@@ -37,6 +38,7 @@ const WITH = {
   jellyfin: shouldRun("jellyfin"),
   homarr: shouldRun("homarr"),
   maintainerr: shouldRun("maintainerr"),
+  qui: shouldRun("qui"),
 }
 
 const provideState = (stateRef: Ref.Ref<typeof import("./services/state").SetupData.Type>) =>
@@ -75,6 +77,7 @@ const program = Effect.gen(function* () {
   if (shouldRun("qbittorrent", "sonarr", "radarr")) waits.push(["http://localhost:8888/", "qBittorrent"])
   if (shouldRun("jellyfin")) waits.push(["http://localhost:8096/web/", "Jellyfin"])
   if (shouldRun("maintainerr")) waits.push(["http://localhost:6246/", "Maintainerr"])
+  if (shouldRun("qui")) waits.push(["http://localhost:7476/health", "qui"])
   yield* Wait.all(waits)
 
   if (shouldRun("qbittorrent", "sonarr", "radarr")) {
@@ -85,6 +88,8 @@ const program = Effect.gen(function* () {
   if (WITH.sonarr) yield* withState(Sonarr.configure())
   if (WITH.radarr) yield* withState(Radarr.configure())
   if (WITH.prowlarr) yield* withState(Prowlarr.configure())
+
+  if (WITH.qui) yield* withState(Qui.configure())
 
   if (WITH.homarr) yield* withState(Homarr.configure())
   if (WITH.seerr) yield* withState(Seerr.configure())

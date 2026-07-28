@@ -4,21 +4,21 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 
 ## Services
 
-| Service | Image | Port | Description |
-| --------- | ------- | ------ | ------------- |
-| **Jellyfin** | `lscr.io/linuxserver/jellyfin` | 8096 | Media server — streams TV, movies, music, books |
-| **qBittorrent** | `lscr.io/linuxserver/qbittorrent` | 8888 | Torrent client — downloads media, seeds back |
-| **qui** | `ghcr.io/autobrr/qui` | 7476 | Modern qBittorrent WebUI + cross-seed manager (hardlink mode) |
-| **Sonarr** | `lscr.io/linuxserver/sonarr` | 8989 | TV series automation — finds, downloads, organizes shows |
-| **Radarr** | `lscr.io/linuxserver/radarr` | 7878 | Movie automation — finds, downloads, organizes movies |
-| **Prowlarr** | `lscr.io/linuxserver/prowlarr` | 9696 | Indexer manager — connects to trackers, syncs to Sonarr/Radarr |
-| **Seerr** | `ghcr.io/seerr-team/seerr` | 5055 | Media requests — users request movies/shows, forwards to Sonarr/Radarr |
-| **FlareSolverr** | `ghcr.io/flaresolverr/flaresolverr` | 8191 | Cloudflare bypass — proxy for trackers behind Cloudflare |
-| **Homarr** | `ghcr.io/homarr-labs/homarr` | 7575 | Dashboard — overview of all services with widgets |
-| **Wizarr** | `ghcr.io/wizarrrr/wizarr` | 5690 | User invitations & onboarding for Jellyfin |
-| **Profilarr** | `ghcr.io/dictionarry-hub/profilarr` | 6868 | Quality profile & custom format manager for Sonarr/Radarr |
-| **Maintainerr** | `ghcr.io/maintainerr/maintainerr` | 6246 | Rule-based media collections & library cleanup |
-| **Cleanuparr** | `ghcr.io/cleanuparr/cleanuparr` | 11011 | Cleans stalled/unlinked downloads, manages seeding & orphans |
+| Service | Port | Description |
+| --------- | ------ | ------------- |
+| **Jellyfin** | 8096 | Media server — streams TV, movies, music, books |
+| **qBittorrent** | 8888 | Torrent client — downloads media, seeds back |
+| **qui** | 7476 | Modern qBittorrent WebUI + cross-seed manager (hardlink mode) |
+| **Sonarr** | 8989 | TV series automation — finds, downloads, organizes shows |
+| **Radarr** | 7878 | Movie automation — finds, downloads, organizes movies |
+| **Prowlarr** | 9696 | Indexer manager — connects to trackers, syncs to Sonarr/Radarr |
+| **Seerr** | 5055 | Media requests — users request movies/shows, forwards to Sonarr/Radarr |
+| **FlareSolverr** | 8191 | Cloudflare bypass — proxy for trackers behind Cloudflare |
+| **Homarr** | 7575 | Dashboard — overview of all services with widgets |
+| **Wizarr** | 5690 | User invitations & onboarding for Jellyfin |
+| **Profilarr** | 6868 | Quality profile & custom format manager for Sonarr/Radarr |
+| **Maintainerr** | 6246 | Rule-based media collections & library cleanup |
+| **Cleanuparr** | 11011 | Cleans stalled/unlinked downloads, manages seeding & orphans |
 
 ## Folder structure
 
@@ -85,6 +85,7 @@ bun setup.ts
 These require your personal credentials or choices:
 
 1. **Homarr API key** — Open `http://localhost:7575`, complete onboarding, then Management → Tools → API → Authentication. Copy the key to `.env` as `HOMARR_API_KEY=<id>.<token>` and re-run `bun setup.ts` to auto-populate apps.
+    1. Manually add the integrations, there is no api
 2. **Set passwords** — Sonarr, Radarr, Prowlarr, Bazarr: Settings → General → Authentication
 3. **Add indexers** — Prowlarr: Settings → Indexers → Add (requires tracker API keys/tokens)
 4. **Jellyfin libraries** — Add libraries pointing to `/data/media/tv` and `/data/media/movies`
@@ -100,12 +101,7 @@ These endpoints exist and could be added, but are opinionated or require secrets
 
 | Service | Endpoint | Why not automated |
 | --------- | ---------- | ------------------- |
-| Prowlarr | `POST /api/v1/indexer` | Requires per-tracker API keys |
-| Sonarr/Radarr | `PUT /api/v3/config/host` | Auth setup should be manual |
 | All | `POST /api/v3/notification` | User-specific webhooks/tokens |
-| Homarr | `POST /api/apps` | **Automated** — requires HOMARR_API_KEY from onboarding |
-| Sonarr | `POST /api/v3/series` | Content choice is personal |
-| Radarr | `POST /api/v3/movie` | Content choice is personal |
 
 ## Networking
 

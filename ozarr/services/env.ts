@@ -107,6 +107,14 @@ export const buildInitialData = Effect.fn("Env.buildInitialData")(function* () {
   const seerrKey = getEnvValue(setupContent, "SEERR_API_KEY") || ""
   const jellyfinKey = getEnvValue(setupContent, "JELLYFIN_API_KEY") || ""
 
+  let quiUrl = getEnvValue(setupContent, "QUI_URL") || ""
+  if (!quiUrl) {
+    const port = extractHostPort(dcContent, "qui")
+    if (port) quiUrl = `http://localhost:${port}`
+  }
+  const quiUsername = getEnvValue(setupContent, "QUI_USERNAME") || ""
+  const quiPassword = getEnvValue(setupContent, "QUI_PASSWORD") || ""
+
   yield* Effect.sync(() => {
     const dc = envContent
     const setup = setupContent
@@ -142,6 +150,9 @@ export const buildInitialData = Effect.fn("Env.buildInitialData")(function* () {
     qbPass: "",
     jellyfinServerName: "",
     jellyfinUserId: "",
+    quiUrl,
+    quiUsername,
+    quiPassword,
     debug,
   })
 })
