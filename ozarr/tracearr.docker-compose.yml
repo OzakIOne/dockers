@@ -1,6 +1,5 @@
 name: tracearr
 services:
-  # Tracearr
   tracearr:
     image: ghcr.io/connorgallopo/tracearr:latest
     container_name: tracearr
@@ -10,12 +9,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOST=0.0.0.0
-      - DATABASE_URL=postgres://tracearr:${DB_PASSWORD}@timescale:5432/tracearr
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET}
-      - COOKIE_SECRET=${COOKIE_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN:-*}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - CORS_ORIGIN=*
       # - DATABASE_POOL_MAX=50  # Database connection pool size (default: 50)
     env_file: tracearr.env
     depends_on:
@@ -29,7 +24,6 @@ services:
     networks:
       - traefik
 
-  # Tracearr
   timescale:
     # TimescaleDB HA with PostgreSQL 18 - pinned for stability
     image: timescale/timescaledb-ha:pg18.1-ts2.25.0
@@ -42,9 +36,6 @@ services:
     # Allow unlimited tuple decompression for migrations on compressed hypertables
     # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
     command: postgres -c timescaledb.license=timescale -c timescaledb.max_tuples_decompressed_per_dml_transaction=0 -c max_locks_per_transaction=4096 -c timescaledb.telemetry_level=off
-    environment:
-      - POSTGRES_USER=tracearr
-      - POSTGRES_DB=tracearr
     env_file: tracearr.env
     volumes:
       - timescale_data:/home/postgres/pgdata/data
@@ -57,7 +48,6 @@ services:
     networks:
       - traefik
 
-  # Tracearr
   redis:
     image: redis:8-alpine
     container_name: tracearr-redis
@@ -72,6 +62,11 @@ services:
     restart: unless-stopped
     networks:
       - traefik
+
+volumes:
+  timescale_data:
+  redis_data:
+  tracearr_backups:
 
 networks:
   traefik:
