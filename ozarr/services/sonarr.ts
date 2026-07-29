@@ -76,7 +76,7 @@ export const configure = Effect.fn("Sonarr.configure")(function* () {
           configContract: "QBittorrentSettings",
           fields: [
             { name: "host", value: "qbittorrent" },
-            { name: "port", value: 8888 },
+            { name: "port", value: 6767 },
             { name: "username", value: state.qbUser },
             { name: "password", value: state.qbPass },
             { name: "tvCategory", value: "sonarr" },

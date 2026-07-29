@@ -10,7 +10,7 @@ const APPS = [
   { name: "Sonarr", description: "TV Series Manager", iconUrl: icon("sonarr"), href: "http://sonarr:8989", pingUrl: "http://sonarr:8989/ping" },
   { name: "Radarr", description: "Movie Manager", iconUrl: icon("radarr"), href: "http://radarr:7878", pingUrl: "http://radarr:7878/ping" },
   { name: "Prowlarr", description: "Indexer Manager", iconUrl: icon("prowlarr"), href: "http://prowlarr:9696", pingUrl: "http://prowlarr:9696/ping" },
-  { name: "qBittorrent", description: "Torrent Client", iconUrl: icon("qbittorrent"), href: "http://qbittorrent:8888", pingUrl: "http://qbittorrent:8888" },
+  { name: "qBittorrent", description: "Torrent Client", iconUrl: icon("qbittorrent"), href: "http://qbittorrent:6767", pingUrl: "http://qbittorrent:6767" },
   { name: "Seerr", description: "Media Requests", iconUrl: icon("overseerr"), href: "http://seerr:5055", pingUrl: "http://seerr:5055" },
 ]
 

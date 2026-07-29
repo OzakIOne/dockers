@@ -7,7 +7,7 @@ Self-hosted media stack — Sonarr, Radarr, Prowlarr, Jellyfin, qBittorrent, and
 | Service | Port | Description |
 | --------- | ------ | ------------- |
 | **Jellyfin** | 8096 | Media server — streams TV, movies, music, books |
-| **qBittorrent** | 8888 | Torrent client — downloads media, seeds back |
+| **qBittorrent** | 6767 | Torrent client — downloads media, seeds back |
 | **qui** | 7476 | Modern qBittorrent WebUI + cross-seed manager (hardlink mode) |
 | **Sonarr** | 8989 | TV series automation — finds, downloads, organizes shows |
 | **Radarr** | 7878 | Movie automation — finds, downloads, organizes movies |

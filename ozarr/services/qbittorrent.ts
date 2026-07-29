@@ -42,7 +42,7 @@ export const extractPassword = Effect.fn("QBittorrent.extractPassword")(function
   if (qbPass) {
     yield* Effect.tryPromise(() => {
       const client = new QBittorrentClient({
-        baseUrl: "http://localhost:8888",
+        baseUrl: "http://localhost:6767",
         username: state.qbUser,
         password: qbPass,
       })
@@ -62,7 +62,7 @@ export const setPreferences = Effect.fn("QBittorrent.setPreferences")(function* 
   if (!state.qbPass) return
 
   yield* Console.log("  Setting qBittorrent preferences...")
-  const baseUrl = "http://localhost:8888"
+  const baseUrl = "http://localhost:6767"
 
   const loginResult = yield* pipe(
     Effect.tryPromise(() =>

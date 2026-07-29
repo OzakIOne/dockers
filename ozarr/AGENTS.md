@@ -97,7 +97,7 @@ graph TB
 
   subgraph traefik_network["traefik external network"]
     subgraph hardlink_group["Shared /data:/data (hardlinks)"]
-      qbt["qBittorrent:8888"]
+      qbt["qBittorrent:6767"]
       qui["qui (cross-seed):7476"]
       qm["qbit_manage:8181"]
       sonarr["Sonarr:8989"]

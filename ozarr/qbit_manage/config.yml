@@ -46,7 +46,7 @@ commands:
   dry_run: false
   skip_qb_version_check: false
 qbt:
-  host: http://qbittorrent:8888
+  host: http://qbittorrent:6767
   user: admin
   pass: adminadmin
 cat:

@@ -251,7 +251,7 @@ export const configure = Effect.fn("Qui.configure")(function* () {
       createClientInstance(
         state.quiUrl,
         cookie,
-        "http://qbittorrent:8888",
+        "http://qbittorrent:6767",
         state.qbUser,
         state.qbPass || "admin",
       ),
