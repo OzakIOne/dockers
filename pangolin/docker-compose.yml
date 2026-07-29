@@ -1,5 +1,35 @@
 name: pangolin
 services:
+  crowdsec:
+    command: -t
+    container_name: crowdsec
+    environment:
+      COLLECTIONS: crowdsecurity/traefik crowdsecurity/appsec-virtual-patching crowdsecurity/appsec-generic-rules
+      ENROLL_INSTANCE_NAME: pangolin-crowdsec
+      ENROLL_TAGS: docker
+      GID: "1000"
+      PARSERS: crowdsecurity/whitelists
+    healthcheck:
+      interval: 10s
+      retries: 3
+      start_period: 30s
+      test:
+        - CMD
+        - cscli
+        - lapi
+        - status
+      timeout: 5s
+    image: docker.io/crowdsecurity/crowdsec:latest
+    labels:
+      - traefik.enable=false
+    ports:
+      - 6060:6060
+    restart: unless-stopped
+    volumes:
+      - ./config/crowdsec:/etc/crowdsec
+      - ./config/crowdsec/db:/var/lib/crowdsec/data
+      - ./config/traefik/logs:/var/log/traefik
+
   pangolin:
     image: docker.io/fosrl/pangolin:ee-1.21.0
     container_name: pangolin
@@ -51,6 +81,8 @@ services:
     network_mode: service:gerbil # Ports appear on the gerbil service
     env_file: .env
     depends_on:
+      crowdsec:
+        condition: service_healthy
       pangolin:
         condition: service_healthy
     command:

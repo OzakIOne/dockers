@@ -94,6 +94,7 @@ These require your personal credentials or choices:
 7. Jellyfin plugins ? For now, maybe automatic later
 8. Maintainerr - Rules group
 9. Cleanuparr - Everything, no api support (except easy setups with sqlite writes)
+10. Jellyfin setup reverse proxy ip for tracearr
 
 ## What the API *could* automate but doesn't
 
