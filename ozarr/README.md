@@ -110,14 +110,10 @@ All services share the `traefik` external network. Containers resolve each other
 ## TODO
 
 - [ ] notifiarr
-- [ ] tracearr
 - [ ] jellyfin plugin (faisable automatiquement via api <http://localhost:8096/api-docs/swagger/index.html>?)
   - [ ] intro skipper
   - [ ] <https://github.com/streamyfin/jellyfin-plugin-streamyfin>
 - [ ] qui api setup <http://localhost:7476/api/openapi.json>
-  - [ ] settings Arr integration
   - [ ] orphan scan?
     - [ ] cross seed setup
-  - [ ] indexers (prowlarr and then activate all)
 - [x] profilar parser healthcheck not working
-- [ ] vpn for torrent

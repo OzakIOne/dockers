@@ -22,7 +22,7 @@ const createClientInstance = async (
   qbHost: string,
   qbUser: string,
   qbPass: string,
-): Promise<void> => {
+): Promise<number> => {
   const resp = await fetch(`${baseUrl}/api/instances`, {
     method: "POST",
     headers: {
@@ -42,6 +42,34 @@ const createClientInstance = async (
   if (!resp.ok) {
     const body = await resp.text()
     throw new Error(`qui create instance returned ${resp.status}: ${body.slice(0, 200)}`)
+  }
+  const data = await resp.json()
+  return data.id as number
+}
+
+const enableOrphanScan = async (
+  baseUrl: string,
+  cookie: string,
+  instanceId: number,
+): Promise<void> => {
+  const resp = await fetch(`${baseUrl}/api/instances/${instanceId}/orphan-scan/settings`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": cookie,
+    },
+    body: JSON.stringify({
+      enabled: true,
+      gracePeriodMinutes: 60,
+      ignorePaths: [],
+      scanIntervalHours: 24,
+      previewSort: "size_desc",
+      maxFilesPerRun: 10000,
+    }),
+  })
+  if (!resp.ok) {
+    const body = await resp.text()
+    throw new Error(`qui orphan scan settings returned ${resp.status}: ${body.slice(0, 200)}`)
   }
 }
 
@@ -75,6 +103,126 @@ const createArrInstance = async (
   }
 }
 
+const configureCrossSeedAutomation = async (
+  baseUrl: string,
+  cookie: string,
+  instanceId: number,
+): Promise<void> => {
+  const resp = await fetch(`${baseUrl}/api/cross-seed/settings`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": cookie,
+    },
+    body: JSON.stringify({
+      enabled: true,
+      runIntervalMinutes: 30,
+      startPaused: false,
+      targetInstanceIds: [instanceId],
+      targetIndexerIds: [],
+      useHardlinks: true,
+      hardlinkBaseDir: "/data",
+      hardlinkDirPreset: "by-instance",
+      findIndividualEpisodes: false,
+      sizeMismatchTolerancePercent: 10,
+      skipRecheck: true,
+      useCrossCategoryAffix: true,
+      categoryAffixMode: "suffix",
+      categoryAffix: ".crossseed",
+      useCustomCategory: false,
+      category: null,
+      tags: [],
+      webhookSourceCategories: [],
+      webhookSourceTags: [],
+      webhookSourceExcludeCategories: [],
+      webhookSourceExcludeTags: [],
+      seasonPackEnabled: false,
+    }),
+  })
+  if (!resp.ok) {
+    const body = await resp.text()
+    throw new Error(`qui cross-seed settings returned ${resp.status}: ${body.slice(0, 200)}`)
+  }
+}
+
+const configureCompletionSettings = async (
+  baseUrl: string,
+  cookie: string,
+  instanceId: number,
+): Promise<void> => {
+  const resp = await fetch(`${baseUrl}/api/cross-seed/completion/${instanceId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": cookie,
+    },
+    body: JSON.stringify({
+      enabled: true,
+      categories: [],
+      tags: [],
+      excludeCategories: [],
+      excludeTags: [],
+      indexerIds: [],
+      bypassTorznabCache: false,
+      delaySeconds: 0,
+    }),
+  })
+  if (!resp.ok) {
+    const body = await resp.text()
+    throw new Error(`qui completion settings returned ${resp.status}: ${body.slice(0, 200)}`)
+  }
+}
+
+const configureDirScan = async (
+  baseUrl: string,
+  cookie: string,
+  instanceId: number,
+): Promise<void> => {
+  const settingsResp = await fetch(`${baseUrl}/api/dir-scan/settings`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": cookie,
+    },
+    body: JSON.stringify({
+      enabled: true,
+      matchMode: "partial",
+      sizeTolerancePercent: 10,
+      minPieceRatio: 0.5,
+      allowPartial: true,
+      startPaused: false,
+      downloadMissingFiles: false,
+      category: ".crossseed",
+      tags: [],
+    }),
+  })
+  if (!settingsResp.ok) {
+    const body = await settingsResp.text()
+    throw new Error(`qui dir-scan settings returned ${settingsResp.status}: ${body.slice(0, 200)}`)
+  }
+
+  const dirResp = await fetch(`${baseUrl}/api/dir-scan/directories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": cookie,
+    },
+    body: JSON.stringify({
+      path: "/data/downloads",
+      targetInstanceId: instanceId,
+      enabled: true,
+      scanIntervalMinutes: 60,
+      category: ".crossseed",
+      tags: [],
+      allowedDownloadClients: [],
+    }),
+  })
+  if (!dirResp.ok) {
+    const body = await dirResp.text()
+    throw new Error(`qui dir-scan directory returned ${dirResp.status}: ${body.slice(0, 200)}`)
+  }
+}
+
 export const configure = Effect.fn("Qui.configure")(function* () {
   const ref = yield* SetupState
   const state = yield* Ref.get(ref)
@@ -98,7 +246,7 @@ export const configure = Effect.fn("Qui.configure")(function* () {
 
   yield* Console.log("  qui login successful")
 
-  yield* pipe(
+  const instanceId = yield* pipe(
     Effect.tryPromise(() =>
       createClientInstance(
         state.quiUrl,
@@ -109,10 +257,42 @@ export const configure = Effect.fn("Qui.configure")(function* () {
       ),
     ),
     Effect.tap(() => Console.log("  qui: qBittorrent client instance created")),
-    Effect.catchCause((cause) =>
-      Console.log(`  qui qBittorrent instance: ${String(cause).slice(0, 180)}`),
-    ),
+    Effect.catchCause(() => Effect.succeed(0)),
   )
+
+  if (instanceId) {
+    yield* pipe(
+      Effect.tryPromise(() => enableOrphanScan(state.quiUrl, cookie, instanceId)),
+      Effect.tap(() => Console.log("  qui: orphan scan enabled")),
+      Effect.catchCause((cause) =>
+        Console.log(`  qui orphan scan: ${String(cause).slice(0, 180)}`),
+      ),
+    )
+
+    yield* pipe(
+      Effect.tryPromise(() => configureCrossSeedAutomation(state.quiUrl, cookie, instanceId)),
+      Effect.tap(() => Console.log("  qui: cross-seed automation enabled")),
+      Effect.catchCause((cause) =>
+        Console.log(`  qui cross-seed automation: ${String(cause).slice(0, 180)}`),
+      ),
+    )
+
+    yield* pipe(
+      Effect.tryPromise(() => configureCompletionSettings(state.quiUrl, cookie, instanceId)),
+      Effect.tap(() => Console.log("  qui: completion cross-seed enabled")),
+      Effect.catchCause((cause) =>
+        Console.log(`  qui completion settings: ${String(cause).slice(0, 180)}`),
+      ),
+    )
+
+    yield* pipe(
+      Effect.tryPromise(() => configureDirScan(state.quiUrl, cookie, instanceId)),
+      Effect.tap(() => Console.log("  qui: dir scan configured")),
+      Effect.catchCause((cause) =>
+        Console.log(`  qui dir scan: ${String(cause).slice(0, 180)}`),
+      ),
+    )
+  }
 
   if (state.sonarrKey) {
     yield* pipe(

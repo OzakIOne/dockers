@@ -26,6 +26,7 @@ services:
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     env_file: .env
+    environment:
       - WEBUI_PORT=6767
       - DOCKER_MODS=ghcr.io/vuetorrent/vuetorrent-lsio-mod:latest
     volumes:
@@ -35,11 +36,12 @@ services:
       - "6881:6881"
       - "6881:6881/udp"
       - "6767:6767"
+    # network_mode: service:gluetun
     networks:
       - traefik
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8888/ || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:6767/ || exit 1"]
       interval: 30s
       timeout: 10s
       start_period: 60s
@@ -267,78 +269,38 @@ services:
     networks:
       - traefik
 
-  # # Tracearr
-  # tracearr:
-  #   image: ghcr.io/connorgallopo/tracearr:latest
-  #   container_name: tracearr
+  # gluetun:
+  #   image: ghcr.io/qdm12/gluetun:latest
+  #   container_name: gluetun
+  #   # line above must be uncommented to allow external containers to connect.
+  #   # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/connect-a-container-to-gluetun.md#external-container-to-gluetun
+  #   cap_add:
+  #     - NET_ADMIN
+  #   devices:
+  #     - /dev/net/tun:/dev/net/tun
   #   ports:
-  #     - "3010:3000"
+  #     - 8888:8888/tcp # HTTP proxy
+  #     - 8388:8388/tcp # Shadowsocks
+  #     - 8388:8388/udp # Shadowsocks
+  #   volumes:
+  #     - ./config/gluetun:/gluetun
   #   environment:
-  #     - NODE_ENV=production
-  #     - PORT=3000
-  #     - HOST=0.0.0.0
-  #     - TZ=${TZ:-UTC}
-  #     - DATABASE_URL=postgres://tracearr:${DB_PASSWORD:-tracearr}@timescale:5432/tracearr
-  #     - REDIS_URL=redis://redis:6379
-  #     - JWT_SECRET=${JWT_SECRET}
-  #     - COOKIE_SECRET=${COOKIE_SECRET}
-  #     - CORS_ORIGIN=${CORS_ORIGIN:-*}
-  #     - LOG_LEVEL=${LOG_LEVEL:-info}
-  #     # - DATABASE_POOL_MAX=50  # Database connection pool size (default: 50)
-  #   depends_on:
-  #     timescale:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - tracearr_backups:/data/backup
-  #   restart: unless-stopped
-  #   networks:
-  #     - traefik
-
-  # # Tracearr
-  # timescale:
-  #   # TimescaleDB HA with PostgreSQL 18 - pinned for stability
-  #   image: timescale/timescaledb-ha:pg18.1-ts2.25.0
-  #   container_name: tracearr-db
-  #   shm_size: 512mb  # Required for PostgreSQL shared memory (increase for large imports)
-  #   ulimits:
-  #     nofile:
-  #       soft: 65536
-  #       hard: 65536  # TimescaleDB chunks require many file descriptors
-  #   # Allow unlimited tuple decompression for migrations on compressed hypertables
-  #   # Increase lock table size for large imports (Tautulli imports with many TimescaleDB chunks)
-  #   command: postgres -c timescaledb.license=timescale -c timescaledb.max_tuples_decompressed_per_dml_transaction=0 -c max_locks_per_transaction=4096 -c timescaledb.telemetry_level=off
-  #   environment:
-  #     - POSTGRES_USER=tracearr
-  #     - POSTGRES_PASSWORD=${DB_PASSWORD:-tracearr}
-  #     - POSTGRES_DB=tracearr
-  #   volumes:
-  #     - timescale_data:/home/postgres/pgdata/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U tracearr"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   restart: unless-stopped
-  #   networks:
-  #     - traefik
-
-  # # Tracearr
-  # redis:
-  #   image: redis:8-alpine
-  #   container_name: tracearr-redis
-  #   command: redis-server --appendonly yes
-  #   volumes:
-  #     - redis_data:/data
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   restart: unless-stopped
-  #   networks:
-  #     - traefik
+  #     # See https://github.com/qdm12/gluetun-wiki/tree/main/setup#setup
+  #     - VPN_SERVICE_PROVIDER=ivpn
+  #     - VPN_TYPE=openvpn
+  #     # OpenVPN:
+  #     - OPENVPN_USER=
+  #     - OPENVPN_PASSWORD=
+  #     # Wireguard:
+  #     # - WIREGUARD_PRIVATE_KEY=wOEI9rqqbDwnN8/Bpp22sVz48T71vJ4fYmFWujulwUU=
+  #     # - WIREGUARD_ADDRESSES=10.64.222.21/32
+  #     # Timezone for accurate log times
+  #     - TZ=Europe/Paris
+  #     # Server list updater
+  #     # See https://github.com/qdm12/gluetun-wiki/blob/main/setup/servers.md#update-the-vpn-servers-list
+  #     - UPDATER_PERIOD=
+  #   # networks:
+  #   #   - traefik
 
 networks:
   traefik:
