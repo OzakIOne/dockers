@@ -4,13 +4,14 @@ services:
     image: ghcr.io/connorgallopo/tracearr:latest
     container_name: tracearr
     ports:
-      - "3010:3000"
+      - "3010:3010"
     environment:
       - NODE_ENV=production
-      - PORT=3000
+      - PORT=3010
       - HOST=0.0.0.0
       - REDIS_URL=redis://redis:6379
-      - CORS_ORIGIN=*
+      - CORS_ORIGIN=* #https://tracearr.example.com
+      - TRUST_PROXY=true
       # - DATABASE_POOL_MAX=50  # Database connection pool size (default: 50)
     env_file: tracearr.env
     depends_on:
