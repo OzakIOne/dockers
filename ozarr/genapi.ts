@@ -73,6 +73,22 @@ for (const { name, url, local, ext, endpoint, patch } of specs) {
 
   await $`bunx typed-openapi ${args}`
 
+  const outPath = `${SPECS_DIR}/${name}.ts`
+  let outContent = await readFile(outPath, "utf-8")
+  outContent = outContent.replace(
+    /\.mapFields\(Struct\.assign\(\(Schema\.Literals\(\[.*?\]\)\)\.fields\)\)/g,
+    "",
+  )
+  outContent = outContent.replace(
+    /(\/\/ <DefaultSchemas>[\s\S]*?\/\/ <\/DefaultSchemas>)/g,
+    (block) => block.replace(
+      /Schema\.Array\((\w+)\)/g,
+      "Schema.Array(Schema.suspend(() => $1))",
+    ),
+  )
+  await writeFile(outPath, outContent)
+  console.log(`  fixed mapFields + reordered defaults in ${name}.ts`)
+
   if (patch) {
     const fetcherPath = `${SPECS_DIR}/${name}-fetcher`
     const content = await readFile(fetcherPath, "utf-8")

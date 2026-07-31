@@ -1,5 +1,5 @@
 import { Effect, Console, pipe, Ref, Layer } from "effect"
-import { SqliteClient } from "@effect/sql-sqlite-node"
+import { SqliteClient } from "@effect/sql-sqlite-bun"
 import { SetupState } from "./state"
 import { SqliteError } from "./errors"
 

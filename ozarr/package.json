@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "@effect/platform-bun": "^4.0.0-beta.102",
-    "@effect/sql-sqlite-node": "4.0.0-beta.102",
+    "@effect/sql-sqlite-bun": "4.0.0-beta.102",
     "effect": "4.0.0-beta.102",
     "tsarr": "^2.13.0",
     "typed-openapi": "^3.2.0"

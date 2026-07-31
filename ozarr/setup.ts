@@ -98,22 +98,34 @@ const program = Effect.gen(function* () {
     return
   }
 
-  const QBittorrent = yield* Effect.tryPromise(() => import("./services/qbittorrent"))
-  const Sonarr = yield* Effect.tryPromise(() => import("./services/sonarr"))
-  const Radarr = yield* Effect.tryPromise(() => import("./services/radarr"))
-  const Prowlarr = yield* Effect.tryPromise(() => import("./services/prowlarr"))
-  const Wizarr = yield* Effect.tryPromise(() => import("./services/wizarr"))
-  const Seerr = yield* Effect.tryPromise(() => import("./services/seerr"))
-  const Jellyfin = yield* Effect.tryPromise(() => import("./services/jellyfin"))
-  const Homarr = yield* Effect.tryPromise(() => import("./services/homarr"))
-  const Maintainerr = yield* Effect.tryPromise(() => import("./services/maintainerr"))
-  const Qui = yield* Effect.tryPromise(() => import("./services/qui"))
+  const tryImport = <T>(path: string, name: string) =>
+    Effect.tryPromise(() => import(path) as Promise<T>).pipe(
+      Effect.catchCause((cause) =>
+        Effect.sync(() => {
+          console.log(`  Skipping ${name} — import failed: ${String(cause).slice(0, 120)}`)
+          return null as T | null
+        }),
+      ),
+    )
 
-  if (WITH.qbittorrent) yield* withState(QBittorrent.preSeedCategories())
+  const sm = {
+    qbt: yield* tryImport<typeof import("./services/qbittorrent")>("./services/qbittorrent", "qBittorrent"),
+    sonarr: yield* tryImport<typeof import("./services/sonarr")>("./services/sonarr", "Sonarr"),
+    radarr: yield* tryImport<typeof import("./services/radarr")>("./services/radarr", "Radarr"),
+    prowlarr: yield* tryImport<typeof import("./services/prowlarr")>("./services/prowlarr", "Prowlarr"),
+    wizarr: yield* tryImport<typeof import("./services/wizarr")>("./services/wizarr", "Wizarr"),
+    seerr: yield* tryImport<typeof import("./services/seerr")>("./services/seerr", "Seerr"),
+    jellyfin: yield* tryImport<typeof import("./services/jellyfin")>("./services/jellyfin", "Jellyfin"),
+    homarr: yield* tryImport<typeof import("./services/homarr")>("./services/homarr", "Homarr"),
+    maintainerr: yield* tryImport<typeof import("./services/maintainerr")>("./services/maintainerr", "Maintainerr"),
+    qui: yield* tryImport<typeof import("./services/qui")>("./services/qui", "qui"),
+  }
+
+  if (WITH.qbittorrent && sm.qbt) yield* withState(sm.qbt.preSeedCategories())
 
   yield* Docker.up()
 
-  if (WITH.wizarr) yield* withState(Wizarr.configure())
+  if (WITH.wizarr && sm.wizarr) yield* withState(sm.wizarr.configure())
 
   const waits: Array<[string, string]> = []
   if (shouldRun("sonarr", "prowlarr", "seerr")) waits.push(["http://localhost:8989/ping", "Sonarr"])
@@ -125,21 +137,21 @@ const program = Effect.gen(function* () {
   if (shouldRun("qui")) waits.push(["http://localhost:7476/health", "qui"])
   yield* Wait.all(waits)
 
-  if (shouldRun("qbittorrent", "sonarr", "radarr")) {
-    yield* withState(QBittorrent.extractPassword())
-    if (shouldRun("qbittorrent")) yield* withState(QBittorrent.setPreferences())
+  if (shouldRun("qbittorrent", "sonarr", "radarr") && sm.qbt) {
+    yield* withState(sm.qbt.extractPassword())
+    if (shouldRun("qbittorrent")) yield* withState(sm.qbt.setPreferences())
   }
 
-  if (WITH.sonarr) yield* withState(Sonarr.configure())
-  if (WITH.radarr) yield* withState(Radarr.configure())
-  if (WITH.prowlarr) yield* withState(Prowlarr.configure())
+  if (WITH.sonarr && sm.sonarr) yield* withState(sm.sonarr.configure())
+  if (WITH.radarr && sm.radarr) yield* withState(sm.radarr.configure())
+  if (WITH.prowlarr && sm.prowlarr) yield* withState(sm.prowlarr.configure())
 
-  if (WITH.qui) yield* withState(Qui.configure())
+  if (WITH.qui && sm.qui) yield* withState(sm.qui.configure())
 
-  if (WITH.homarr) yield* withState(Homarr.configure())
-  if (WITH.seerr) yield* withState(Seerr.configure())
-  if (WITH.jellyfin) yield* withState(Jellyfin.configure())
-  if (WITH.maintainerr) yield* withState(Maintainerr.configure())
+  if (WITH.homarr && sm.homarr) yield* withState(sm.homarr.configure())
+  if (WITH.seerr && sm.seerr) yield* withState(sm.seerr.configure())
+  if (WITH.jellyfin && sm.jellyfin) yield* withState(sm.jellyfin.configure())
+  if (WITH.maintainerr && sm.maintainerr) yield* withState(sm.maintainerr.configure())
 
   const final = yield* Ref.get(stateRef)
   yield* Console.log("")

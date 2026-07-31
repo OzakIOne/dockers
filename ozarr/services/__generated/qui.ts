@@ -9,7 +9,7 @@ const Schema_default_0_prop = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0),
 const Boolean_default_true_prop = Schema.Boolean.pipe(Schema.withDecodingDefaultType(Effect.succeed(true)));
 const Int_default_0_prop = Schema.Int.pipe(Schema.withDecodingDefaultType(Effect.succeed(0)));
 const Int_default_15_prop = Schema.Int.pipe(Schema.withDecodingDefaultType(Effect.succeed(15)));
-const Array_default_value_prop = Schema.Array(PathMapping).pipe(Schema.withDecodingDefaultType(Effect.succeed([])));
+const Array_default_value_prop = Schema.Array(Schema.suspend(() => PathMapping)).pipe(Schema.withDecodingDefaultType(Effect.succeed([])));
 const Union_default_false_prop = Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a }))).pipe(Schema.withDecodingDefaultType(Effect.succeed(false)));
 const Schema_default_0_prop_7 = Schema.NumberFromString.check(Schema.isInt()).pipe(Schema.withDecodingDefaultType(Effect.succeed(0)));
 const Schema_default_500_prop = Schema.NumberFromString.check(Schema.isInt(), Schema.isLessThanOrEqualTo(2000)).pipe(Schema.withDecodingDefaultType(Effect.succeed(500)));
@@ -246,7 +246,7 @@ export type CrossSeedApplyResponse = __TypedOpenapi.Schemas.CrossSeedApplyRespon
 export const CrossSeedApplyResponse = Schema.Struct({ results: Schema.optional(Schema.Array(CrossSeedApplyResult)) });
 
 export type LocalCrossSeedMatch = __TypedOpenapi.Schemas.LocalCrossSeedMatch;
-export const LocalCrossSeedMatch = Schema.Struct({ instanceId: Schema.optional(Schema.Int), instanceName: Schema.optional(Schema.String), hash: Schema.optional(Schema.String), name: Schema.optional(Schema.String), size: Schema.optional(Schema.Int), progress: Schema.optional(Schema.Number), savePath: Schema.optional(Schema.String), contentPath: Schema.optional(Schema.String), category: Schema.optional(Schema.String), tags: Schema.optional(Schema.String), state: Schema.optional(Schema.String), tracker: Schema.optional(Schema.String), trackerHealth: Schema.optional(Schema.Literals(["unregistered", "tracker_down", "tracker_error"])), matchType: Schema.optional(Schema.Literals(["content_path", "name", "release"])) });
+export const LocalCrossSeedMatch = Schema.Struct({ instance_id: Schema.optional(Schema.Int), instance_name: Schema.optional(Schema.String), hash: Schema.optional(Schema.String), name: Schema.optional(Schema.String), size: Schema.optional(Schema.Int), progress: Schema.optional(Schema.Number), save_path: Schema.optional(Schema.String), content_path: Schema.optional(Schema.String), category: Schema.optional(Schema.String), tags: Schema.optional(Schema.String), state: Schema.optional(Schema.String), tracker: Schema.optional(Schema.String), tracker_health: Schema.optional(Schema.Literals(["unregistered", "tracker_down", "tracker_error"])), match_type: Schema.optional(Schema.Literals(["content_path", "hardlink", "reflink", "name", "release"])) });
 
 export type CategorySnapshot = __TypedOpenapi.Schemas.CategorySnapshot;
 export const CategorySnapshot = Schema.Struct({ savePath: Schema.optional(Schema.String) });
@@ -789,7 +789,7 @@ export const get__api_instances_InstanceID_reannounce_activity = {
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
   parameters: { query: Schema.optional(Schema.Struct({ limit: Schema.optional(Schema.NumberFromString.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(1))) })), path: Schema.Struct({ instanceID: Schema.NumberFromString.check(Schema.isInt(), Schema.isGreaterThanOrEqualTo(1)) }) },
-  responses: { 200: Schema.Array(Schema.Struct({ instanceId: Schema.Int, hash: Schema.String, torrentName: Schema.optional(Schema.String), trackers: Schema.optional(Schema.String), outcome: Schema.Literals(["skipped", "failed", "succeeded"]), reason: Schema.optional(Schema.String), timestamp: Schema.String })), 400: Schema.Unknown },
+  responses: { 200: Schema.Array(Schema.Struct({ instanceId: Schema.Int, hash: Schema.String, torrentName: Schema.optional(Schema.String), trackers: Schema.optional(Schema.String), outcome: Schema.Literals(["skipped", "failed", "succeeded", "started"]), reason: Schema.optional(Schema.String), timestamp: Schema.String })), 400: Schema.Unknown },
 };
 
 export type get__api_instances_InstanceID_reannounce_candidates = __TypedOpenapi.Endpoints.get__api_instances_InstanceID_reannounce_candidates;

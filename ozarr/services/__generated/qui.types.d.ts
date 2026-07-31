@@ -1018,11 +1018,11 @@ export type LocalCrossSeedMatch = Partial<{
   /**
    * The qBittorrent instance ID containing this torrent
    */
-  instanceId: number;
+  instance_id: number;
   /**
    * The name of the qBittorrent instance
    */
-  instanceName: string;
+  instance_name: string;
   /**
    * Torrent info hash
    */
@@ -1042,11 +1042,11 @@ export type LocalCrossSeedMatch = Partial<{
   /**
    * Save path on disk
    */
-  savePath: string;
+  save_path: string;
   /**
    * Content path on disk
    */
-  contentPath: string;
+  content_path: string;
   /**
    * Torrent category
    */
@@ -1066,11 +1066,11 @@ export type LocalCrossSeedMatch = Partial<{
   /**
    * Tracker health status (only present if unhealthy)
    */
-  trackerHealth: ("unregistered" | "tracker_down" | "tracker_error");
+  tracker_health: ("unregistered" | "tracker_down" | "tracker_error");
   /**
    * How this torrent was matched
    */
-  matchType: ("content_path" | "name" | "release");
+  match_type: ("content_path" | "hardlink" | "reflink" | "name" | "release");
 }>
 export type CategorySnapshot = Partial<{ savePath: string }>
 export type BackupRun = Partial<{ id: number, instanceId: number, kind: ("manual" | "hourly" | "daily" | "weekly" | "monthly"), status: ("pending" | "running" | "success" | "failed" | "canceled"), requestedBy: string, requestedAt: string, startedAt: (string | null), completedAt: (string | null), archivePath: (string | null), manifestPath: (string | null), totalBytes: number, torrentCount: number, categoryCounts: (Record<string, number> | null), errorMessage: (string | null), categories: (Record<string, CategorySnapshot> | null), tags: (Array<string> | null) }>
@@ -2390,7 +2390,7 @@ export type get__api_instances_InstanceID_reannounce_activity = {
      * Optional comma-separated list of problematic tracker domains for this event.
      */
     trackers?: string;
-    outcome: ("skipped" | "failed" | "succeeded");
+    outcome: ("skipped" | "failed" | "succeeded" | "started");
     /**
      * Short explanation for the outcome.
      */
