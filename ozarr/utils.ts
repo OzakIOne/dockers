@@ -320,7 +320,7 @@ export const waitFor = (url: string, label: string) =>
       Effect.retry(
         pipe(
           Schedule.spaced(Duration.seconds(2)),
-          Schedule.both(Schedule.recurs(90)),
+          Schedule.upTo({ times: 90 }),
         ),
       ),
     );

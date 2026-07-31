@@ -4,8 +4,8 @@ import { SetupState } from "./state"
 import { SqliteError } from "./errors"
 
 const reactivityLayer = Layer.unwrap(
-  Effect.tryPromise(() => import("@effect/experimental/Reactivity")).pipe(
-    Effect.map((m) => m.Reactivity.layer),
+  Effect.tryPromise(() => import("effect/unstable/reactivity/Reactivity")).pipe(
+    Effect.map((m) => m.layer),
     Effect.catchCause(() => Effect.succeed(Layer.empty)),
   ),
 )

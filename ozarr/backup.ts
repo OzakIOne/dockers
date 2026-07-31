@@ -83,7 +83,7 @@ const waitForCommand = Effect.fn("Backup.waitForCommand")(function* (
     Effect.retry(
       pipe(
         Schedule.spaced(Duration.seconds(2)),
-        Schedule.both(Schedule.recurs(60)),
+        Schedule.upTo({ times: 60 }),
       ),
     ),
   )
