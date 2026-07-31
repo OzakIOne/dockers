@@ -24,11 +24,40 @@ services:
       - traefik.enable=false
     ports:
       - 6060:6060
+      - 8080:8080
     restart: unless-stopped
     volumes:
       - ./config/crowdsec:/etc/crowdsec
       - ./config/crowdsec/db:/var/lib/crowdsec/data
       - ./config/traefik/logs:/var/log/traefik
+      - /var/log/journal:/var/log/host:ro
+
+  crowdsec-web-ui:
+    image: ghcr.io/theduffman85/crowdsec-web-ui:latest
+    container_name: crowdsec_web_ui
+    ports:
+      - "3020:3000"
+    # For local CrowdSec instances
+    # extra_hosts:
+      # - "host.docker.internal:host-gateway"
+    environment:
+      CONFIG_INSTANCE_LAPI_URL: http://crowdsec:8080
+      # For local CrowdSec instances
+      # CONFIG_INSTANCE_LAPI_URL: http://host.docker.internal:8080
+      CONFIG_INSTANCE_LAPI_AUTH_USERNAME: crowdsec-web-ui
+      CONFIG_INSTANCE_LAPI_AUTH_PASSWORD:
+      CONFIG_INSTANCE_METRICS_URL: http://crowdsec:6060/metrics
+    networks:
+      - default
+      - traefik
+    volumes:
+      - ./config/crowdsec-web-ui/:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3020/"]
+      interval: "10s"
+      timeout: "10s"
+      retries: 15
 
   pangolin:
     image: docker.io/fosrl/pangolin:ee-1.21.0
@@ -60,7 +89,7 @@ services:
       - --generateAndSaveKeyTo=/var/config/key
       - --remoteConfig=http://pangolin:3001/api/v1/
     networks:
-      - pangolin_frontend
+      - default
       - traefik
     volumes:
       - ./config/:/var/config

@@ -121,6 +121,13 @@ services:
     networks:
       - traefik
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:7575/api/health/live || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+
 
   seerr:
     image: ghcr.io/seerr-team/seerr:latest
@@ -146,6 +153,12 @@ services:
         condition: service_healthy
       jellyfin:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5055/api/v1/settings/public || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
@@ -167,6 +180,12 @@ services:
         condition: service_healthy
       jellyfin:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9696 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   # https://github.com/ThePhaseless/Byparr/
   # https://github.com/germondai/trawl
@@ -201,6 +220,12 @@ services:
         condition: service_healthy
       jellyfin:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5690 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   profilarr:
     image: ghcr.io/dictionarry-hub/profilarr:latest
@@ -228,6 +253,12 @@ services:
         condition: service_healthy
       jellyfin:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:6868/api || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   maintainerr:
     image: ghcr.io/maintainerr/maintainerr:latest
@@ -268,6 +299,12 @@ services:
     env_file: .env
     networks:
       - traefik
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:11011/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   # gluetun:
   #   image: ghcr.io/qdm12/gluetun:latest

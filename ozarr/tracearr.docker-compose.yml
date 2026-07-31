@@ -24,6 +24,12 @@ services:
     restart: unless-stopped
     networks:
       - traefik
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3010 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
 
   timescale:
     # TimescaleDB HA with PostgreSQL 18 - pinned for stability
