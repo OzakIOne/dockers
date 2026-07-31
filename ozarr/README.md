@@ -64,8 +64,24 @@ See [`CROSS_SEED.md`](./CROSS_SEED.md) for the cross-seed (qui) + Cleanuparr unl
 
 ```bash
 bun install
+docker compose pull
+bun setup.ts --folder
+docker compose up -d
+bun setup.ts --api
+# Copy the API keys into setup.env, then:
 bun setup.ts
 ```
+
+## Setup workflow
+
+| Step | Command | What it does |
+| ------ | ---------- | ------------- |
+| 1. Pull images | `docker compose pull` | Downloads container images |
+| 2. Create dirs | `bun setup.ts --folder` | `data/downloads/`, `data/media/`, `config/` per service + permissions |
+| 3. Start containers | `docker compose up -d` | Starts all services (containers must run before API config) |
+| 4. Extract API keys | `bun setup.ts --api` | Finds keys in `config/{prowlarr,radarr,sonarr}/config.xml` and `config/seerr/settings.json` |
+| 5. Fill setup.env | Edit `setup.env` | Copy extracted API keys + set `QBITTORRENT_PASSWORD`, `QUI_USERNAME`, `QUI_PASSWORD`, `WIZARR_API_KEY`, etc. |
+| 6. Run setup | `bun setup.ts` | Configures qBittorrent, Sonarr, Radarr, Prowlarr, Homarr, Seerr, Jellyfin, Maintainerr, qui via API |
 
 ## Setup automation (`setup.ts`)
 
@@ -80,21 +96,21 @@ bun setup.ts
 | Prowlarr API | FlareSolverr proxy, Sonarr + Radarr app connections with full sync |
 | Homarr API | Creates apps for all services with icons and status pings (requires API key) |
 
-## Manual steps (after `setup.ts`)
+## Manual steps
 
 These require your personal credentials or choices:
 
-1. **Homarr API key** — Open `http://localhost:7575`, complete onboarding, then Management → Tools → API → Authentication. Copy the key to `.env` as `HOMARR_API_KEY=<id>.<token>` and re-run `bun setup.ts` to auto-populate apps.
-    1. Manually add the integrations, there is no api
-2. **Set passwords** — Sonarr, Radarr, Prowlarr, Bazarr: Settings → General → Authentication
-3. **Add indexers** — Prowlarr: Settings → Indexers → Add (requires tracker API keys/tokens)
-4. **Jellyfin libraries** — Add libraries pointing to `/data/media/tv` and `/data/media/movies`
-5. **Seerr** — Connect to Sonarr, Radarr, and Jellyfin via Settings → Services
-6. **qBittorrent** — Get temp password from `docker logs qbittorrent`, change in WebUI
-7. Jellyfin plugins ? For now, maybe automatic later
-8. Maintainerr - Rules group
-9. Cleanuparr - Everything, no api support (except easy setups with sqlite writes)
-10. Jellyfin setup reverse proxy ip for tracearr
+1. **qBittorrent password** — Get temp password from `docker logs qbittorrent`, change in WebUI, then add `QBITTORRENT_PASSWORD=<password>` to `setup.env`
+2. **qui password** — Set `QUI_USERNAME` and `QUI_PASSWORD` in `setup.env`
+3. **Wizarr API key** — Generate via Wizarr WebUI, add `WIZARR_API_KEY=<key>` to `setup.env`
+4. **Homarr API key** — Open `http://localhost:7575`, complete onboarding, then Management → Tools → API → Authentication. Add `HOMARR_API_KEY=<id>.<token>` to `setup.env`
+5. **Set passwords** — Sonarr, Radarr, Prowlarr: Settings → General → Authentication
+6. **Add indexers** — Prowlarr: Settings → Indexers → Add (requires tracker API keys/tokens)
+7. **Jellyfin libraries** — Add libraries pointing to `/data/media/tv` and `/data/media/movies`
+8. **Seerr** — Connect to Sonarr, Radarr, and Jellyfin via Settings → Services (automated if keys are in `setup.env`)
+9. **Maintainerr** — Rules group setup
+10. **Cleanuparr** — Manual setup (no API support, easy setups via SQLite writes)
+11. **Jellyfin** — Setup reverse proxy IP for tracearr
 
 ## What the API *could* automate but doesn't
 

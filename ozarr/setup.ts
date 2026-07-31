@@ -5,16 +5,6 @@ import { SetupState } from "./services/state"
 import * as Env from "./services/env"
 import * as Docker from "./services/docker"
 import * as Wait from "./services/wait"
-import * as QBittorrent from "./services/qbittorrent"
-import * as Sonarr from "./services/sonarr"
-import * as Radarr from "./services/radarr"
-import * as Prowlarr from "./services/prowlarr"
-import * as Wizarr from "./services/wizarr"
-import * as Seerr from "./services/seerr"
-import * as Jellyfin from "./services/jellyfin"
-import * as Homarr from "./services/homarr"
-import * as Maintainerr from "./services/maintainerr"
-import * as Qui from "./services/qui"
 
 const TARGET_SERVICE = (() => {
   const idx = Bun.argv.indexOf("--service")
@@ -24,6 +14,45 @@ const TARGET_SERVICE = (() => {
     return Bun.argv[shortIdx + 1].toLowerCase()
   return null
 })()
+
+const FOLDER_ONLY = Bun.argv.includes("--folder")
+
+if (Bun.argv.includes("--api")) {
+  const apiKeys: Record<string, string> = {}
+
+  const xmlFiles = [
+    "config/prowlarr/config.xml",
+    "config/radarr/config.xml",
+    "config/sonarr/config.xml",
+  ]
+  for (const path of xmlFiles) {
+    try {
+      const content = await Bun.file(path).text()
+      const m = content.match(/<ApiKey>([^<]+)<\/ApiKey>/)
+      const service = path.split("/")[1]
+      if (m) apiKeys[service] = m[1]
+      else console.log(`${service}: ApiKey not found in ${path}`)
+    } catch {
+      console.log(`${path.split("/")[1]}: ${path} not found`)
+    }
+  }
+
+  try {
+    const seerrPath = "config/seerr/settings.json"
+    const content = await Bun.file(seerrPath).text()
+    const settings = JSON.parse(content)
+    if (settings.main?.apiKey) apiKeys.seerr = settings.main.apiKey
+    else console.log("seerr: apiKey not found in settings.json")
+  } catch {
+    console.log("seerr: config/seerr/settings.json not found")
+  }
+
+  console.log("")
+  for (const [service, key] of Object.entries(apiKeys)) {
+    console.log(`${service}: ${key}`)
+  }
+  process.exit(0)
+}
 
 const shouldRun = (...svcs: string[]) =>
   !TARGET_SERVICE || svcs.includes(TARGET_SERVICE)
@@ -63,6 +92,22 @@ const program = Effect.gen(function* () {
   yield* Effect.tryPromise(() =>
     Bun.$`chmod -R a=,a+rX,u+w,g+w ${s0.datDir}/ ${s0.cfgDir}/ 2>/dev/null || true`.quiet(),
   )
+
+  if (FOLDER_ONLY) {
+    yield* Console.log("Directories created.")
+    return
+  }
+
+  const QBittorrent = yield* Effect.tryPromise(() => import("./services/qbittorrent"))
+  const Sonarr = yield* Effect.tryPromise(() => import("./services/sonarr"))
+  const Radarr = yield* Effect.tryPromise(() => import("./services/radarr"))
+  const Prowlarr = yield* Effect.tryPromise(() => import("./services/prowlarr"))
+  const Wizarr = yield* Effect.tryPromise(() => import("./services/wizarr"))
+  const Seerr = yield* Effect.tryPromise(() => import("./services/seerr"))
+  const Jellyfin = yield* Effect.tryPromise(() => import("./services/jellyfin"))
+  const Homarr = yield* Effect.tryPromise(() => import("./services/homarr"))
+  const Maintainerr = yield* Effect.tryPromise(() => import("./services/maintainerr"))
+  const Qui = yield* Effect.tryPromise(() => import("./services/qui"))
 
   if (WITH.qbittorrent) yield* withState(QBittorrent.preSeedCategories())
 
@@ -113,14 +158,16 @@ const program = Effect.gen(function* () {
   yield* Console.log("  Maintainerr:  http://localhost:6246")
   yield* Console.log("")
   yield* Console.log("Manual steps:")
-  yield* Console.log("  1. Set username/password in each *arr service (Settings > General)")
-  yield* Console.log("  2. Add indexers in Prowlarr (Settings > Indexers)")
-  yield* Console.log("  3. Configure Jellyfin libraries: /data/media/tv and /data/media/movies")
+  yield* Console.log("  1. Set qBittorrent password: docker logs qbittorrent, then add QBITTORRENT_PASSWORD=<pw> to setup.env")
+  yield* Console.log("  2. Set QUI_USERNAME and QUI_PASSWORD in setup.env for qui (cross-seed)")
+  yield* Console.log("  3. Generate Wizarr API key in WebUI, add WIZARR_API_KEY=<key> to setup.env")
   if (!Bun.env.HOMARR_API_KEY) {
-    yield* Console.log("  4. Generate Homarr API key (Management → Tools → API → Authentication)")
+    yield* Console.log("  4. Generate Homarr API key (Management -> Tools -> API -> Authentication)")
     yield* Console.log("     Add to setup.env as HOMARR_API_KEY=<id>.<token>, then re-run setup")
   }
-  yield* Console.log("  5. To re-run with qBittorrent creds: bun setup.ts admin <password>")
+  yield* Console.log("  5. Set username/password in each *arr service (Settings > General)")
+  yield* Console.log("  6. Add indexers in Prowlarr (Settings > Indexers)")
+  yield* Console.log("  7. Configure Jellyfin libraries: /data/media/tv and /data/media/movies")
 })
 
 const appLayer = Layer.mergeAll(BunServices.layer, FetchHttpClient.layer)

@@ -236,10 +236,12 @@ export const configure = Effect.fn("Qui.configure")(function* () {
 
   const cookie = yield* pipe(
     Effect.tryPromise(() => quiLogin(state.quiUrl, state.quiUsername, state.quiPassword)),
-    Effect.catchCause((cause) => {
-      yield* Console.log(`  qui login failed: ${String(cause).slice(0, 120)}`)
-      return Effect.succeed("")
-    }),
+    Effect.catchCause((cause) =>
+      Effect.sync(() => {
+        console.log(`  qui login failed: ${String(cause).slice(0, 120)}`)
+        return ""
+      }),
+    ),
   )
 
   if (!cookie) return
