@@ -2,7 +2,7 @@ import { Effect, Console, pipe, Ref } from "effect"
 import { SonarrClient } from "tsarr/sonarr"
 import type { MediaManagementConfigResource } from "tsarr/sonarr/types"
 import { SetupState } from "./state"
-import { ApiError } from "./errors"
+import { ApiError, stringifyError } from "./errors"
 
 const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>, label: string) =>
   Effect.tryPromise(() => promise).pipe(
@@ -12,7 +12,7 @@ const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Respon
           new ApiError({
             service: "sonarr",
             status: result.response?.status ?? 0,
-            message: `${label}: ${String(result.error).slice(0, 200)}`,
+            message: `${label}: ${stringifyError(result.error).slice(0, 200)}`,
           }),
         )
       }

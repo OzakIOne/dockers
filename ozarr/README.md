@@ -100,7 +100,7 @@ bun setup.ts
 
 These require your personal credentials or choices:
 
-1. **qBittorrent password** — Get temp password from `docker logs qbittorrent`, change in WebUI, then add `QBITTORRENT_PASSWORD=<password>` to `setup.env`
+1. **qBittorrent password + Seerr onboarding** — Set `QBITTORRENT_PASSWORD=<password>` in `setup.env` (must match the password set in the qBittorrent WebUI). Do the Seerr (Jellyseerr) onboarding at the same time: open `http://localhost:5055`, create the admin user, then copy its API key (Settings → Main) into `SEERR_API_KEY` in `setup.env`. Seerr settings endpoints return `403` until onboarding is done, so `bun setup.ts` can only configure it afterwards.
 2. **qui password** — Set `QUI_USERNAME` and `QUI_PASSWORD` in `setup.env`
 3. **Wizarr API key** — Generate via Wizarr WebUI, add `WIZARR_API_KEY=<key>` to `setup.env`
 4. **Homarr API key** — Open `http://localhost:7575`, complete onboarding, then Management → Tools → API → Authentication. Add `HOMARR_API_KEY=<id>.<token>` to `setup.env`

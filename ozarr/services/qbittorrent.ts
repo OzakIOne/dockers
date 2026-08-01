@@ -22,38 +22,24 @@ export const preSeedCategories = Effect.fn("QBittorrent.preSeedCategories")(func
   )
 })
 
-export const extractPassword = Effect.fn("QBittorrent.extractPassword")(function* () {
+export const verifyConnection = Effect.fn("QBittorrent.verifyConnection")(function* () {
   const ref = yield* SetupState
   const state = yield* Ref.get(ref)
+  if (!state.qbPass) return
 
-  let qbPass = ""
-
-  const logs = yield* Effect.tryPromise(() =>
-    Bun.$`docker logs qbittorrent 2>/dev/null`.text(),
-  ).pipe(Effect.catchCause(() => Effect.succeed("")))
-
-  const m = logs.match(/session:\s*['"]?(\S+)['"]?/)
-  if (m) qbPass = m[1]
-
-  if (!qbPass && state.qbPass) qbPass = state.qbPass
-
-  yield* Ref.set(ref, { ...state, qbPass })
-
-  if (qbPass) {
-    yield* Effect.tryPromise(() => {
-      const client = new QBittorrentClient({
-        baseUrl: "http://localhost:6767",
-        username: state.qbUser,
-        password: qbPass,
-      })
-      return client.getSystemStatus()
-    }).pipe(
-      Effect.tap(() => Console.log("  qBittorrent SDK connection verified.")),
-      Effect.catchCause(() =>
-        Console.log("  Warning: qBittorrent SDK connection failed."),
-      ),
-    )
-  }
+  yield* Effect.tryPromise(() => {
+    const client = new QBittorrentClient({
+      baseUrl: "http://localhost:6767",
+      username: state.qbUser,
+      password: state.qbPass,
+    })
+    return client.getSystemStatus()
+  }).pipe(
+    Effect.tap(() => Console.log("  qBittorrent SDK connection verified.")),
+    Effect.catchCause(() =>
+      Console.log("  Warning: qBittorrent SDK connection failed."),
+    ),
+  )
 })
 
 export const setPreferences = Effect.fn("QBittorrent.setPreferences")(function* () {

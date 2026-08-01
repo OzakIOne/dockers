@@ -138,7 +138,7 @@ const program = Effect.gen(function* () {
   yield* Wait.all(waits)
 
   if (shouldRun("qbittorrent", "sonarr", "radarr") && sm.qbt) {
-    yield* withState(sm.qbt.extractPassword())
+    yield* withState(sm.qbt.verifyConnection())
     if (shouldRun("qbittorrent")) yield* withState(sm.qbt.setPreferences())
   }
 
@@ -160,7 +160,6 @@ const program = Effect.gen(function* () {
   yield* Console.log("Access:")
   yield* Console.log("  qBittorrent:  http://localhost:6767  (user: admin)")
   if (final.qbPass) yield* Console.log(`              password: ${final.qbPass}`)
-  else yield* Console.log("              password: check  docker logs qbittorrent")
   yield* Console.log("  Sonarr:       http://localhost:8989")
   yield* Console.log("  Radarr:       http://localhost:7878")
   yield* Console.log("  Prowlarr:     http://localhost:9696")
@@ -168,18 +167,12 @@ const program = Effect.gen(function* () {
   yield* Console.log("  Homarr:       http://localhost:7575")
   yield* Console.log("  Seerr:        http://localhost:5055")
   yield* Console.log("  Maintainerr:  http://localhost:6246")
-  yield* Console.log("")
-  yield* Console.log("Manual steps:")
-  yield* Console.log("  1. Set qBittorrent password: docker logs qbittorrent, then add QBITTORRENT_PASSWORD=<pw> to setup.env")
-  yield* Console.log("  2. Set QUI_USERNAME and QUI_PASSWORD in setup.env for qui (cross-seed)")
-  yield* Console.log("  3. Generate Wizarr API key in WebUI, add WIZARR_API_KEY=<key> to setup.env")
   if (!Bun.env.HOMARR_API_KEY) {
-    yield* Console.log("  4. Generate Homarr API key (Management -> Tools -> API -> Authentication)")
+    yield* Console.log("")
+    yield* Console.log("Manual steps:")
+    yield* Console.log("  1. Generate Homarr API key (Management -> Tools -> API -> Authentication)")
     yield* Console.log("     Add to setup.env as HOMARR_API_KEY=<id>.<token>, then re-run setup")
   }
-  yield* Console.log("  5. Set username/password in each *arr service (Settings > General)")
-  yield* Console.log("  6. Add indexers in Prowlarr (Settings > Indexers)")
-  yield* Console.log("  7. Configure Jellyfin libraries: /data/media/tv and /data/media/movies")
 })
 
 const appLayer = Layer.mergeAll(BunServices.layer, FetchHttpClient.layer)

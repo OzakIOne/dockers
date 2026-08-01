@@ -19,3 +19,12 @@ export class SqliteError extends Schema.TaggedErrorClass<SqliteError>()(
   "SqliteError",
   { operation: Schema.String, message: Schema.String },
 ) {}
+
+export const stringifyError = (err: unknown): string => {
+  if (err instanceof Error) return err.message
+  try {
+    return JSON.stringify(err)
+  } catch {
+    return String(err)
+  }
+}

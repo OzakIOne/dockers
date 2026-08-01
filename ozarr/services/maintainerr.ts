@@ -1,4 +1,4 @@
-import { Effect, Console, pipe, Ref } from "effect"
+import { Effect, Console, pipe, Ref, Duration } from "effect"
 import { createApi as createJfApi, configureFetcher } from "./__generated/jellyfin-fetcher"
 import { createApi as createMaintainerrApi } from "./__generated/maintainerr-fetcher"
 import { SetupState } from "./state"
@@ -52,6 +52,7 @@ export const configure = Effect.fn("Maintainerr.configure")(function* () {
           emby_user_id: jellyfinUserId,
         },
       }),
+      Effect.timeout(Duration.seconds(10)),
       Effect.tap(() => Console.log("  Maintainerr: Jellyfin instance configured")),
       Effect.catchCause((e) =>
         Console.log(`  Maintainerr Jellyfin: ${String(e).slice(0, 180)}`),
@@ -84,6 +85,7 @@ export const configure = Effect.fn("Maintainerr.configure")(function* () {
         body: JSON.stringify(settingsBody),
       }).then((r) => (r.ok ? r : Promise.reject(new Error(`HTTP ${r.status}`)))),
     ),
+    Effect.timeout(Duration.seconds(10)),
     Effect.tap(() => Console.log("  Maintainerr: settings updated")),
     Effect.catchCause((e) =>
       Console.log(`  Maintainerr settings: ${String(e).slice(0, 180)}`),

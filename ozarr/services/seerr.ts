@@ -1,7 +1,7 @@
 import { Effect, Schedule, Duration, Console, pipe, Ref } from "effect"
 import { SeerrClient, Seerr } from "tsarr"
 import { SetupState } from "./state"
-import { ApiError } from "./errors"
+import { ApiError, stringifyError } from "./errors"
 import type { SonarrSettings, RadarrSettings } from "tsarr/seerr/types"
 
 const wrapSeerr = <T>(
@@ -15,7 +15,7 @@ const wrapSeerr = <T>(
           new ApiError({
             service: "seerr",
             status: result.response?.status ?? 0,
-            message: `${label}: ${String(result.error).slice(0, 200)}`,
+            message: `${label}: ${stringifyError(result.error).slice(0, 200)}`,
           }),
         )
       }
@@ -49,12 +49,13 @@ export const configure = Effect.fn("Seerr.configure")(function* () {
 
   yield* Console.log("  Seerr ready")
 
-  const seerrOpts = { baseUrl, headers: { "X-Api-Key": state.seerrKey } as Record<string, string> }
+  const seerrOpts = { baseUrl: `${baseUrl}/api/v1`, headers: { "X-Api-Key": state.seerrKey } as Record<string, string> }
 
-  const existingSonarrs = yield* pipe(
+  const existingSonarrsRaw = yield* pipe(
     wrapSeerr(Seerr.getSettingsSonarr(seerrOpts), "getSettingsSonarr"),
     Effect.catchCause(() => Effect.succeed([] as SonarrSettings[])),
   )
+  const existingSonarrs = Array.isArray(existingSonarrsRaw) ? existingSonarrsRaw : []
 
   const sonarrExists = existingSonarrs.some(
     (s) => s.name === "Sonarr" && s.hostname === "sonarr" && s.port === 8989 && s.apiKey === state.sonarrKey,
@@ -91,10 +92,11 @@ export const configure = Effect.fn("Seerr.configure")(function* () {
     )
   }
 
-  const existingRadarrs = yield* pipe(
+  const existingRadarrsRaw = yield* pipe(
     wrapSeerr(Seerr.getSettingsRadarr(seerrOpts), "getSettingsRadarr"),
     Effect.catchCause(() => Effect.succeed([] as RadarrSettings[])),
   )
+  const existingRadarrs = Array.isArray(existingRadarrsRaw) ? existingRadarrsRaw : []
 
   const radarrExists = existingRadarrs.some(
     (s) => s.name === "Radarr" && s.hostname === "radarr" && s.port === 7878 && s.apiKey === state.radarrKey,
