@@ -19,7 +19,8 @@ rules:
           type: text
           value: Perma
   - "1":
-      - firstValue: Seerr.isRequested
+      - operator: OR
+        firstValue: Seerr.isRequested
         action: EQUALS
         customValue:
           type: boolean
@@ -37,7 +38,8 @@ rules:
           type: text
           value: Perma
   - "2":
-      - firstValue: Seerr.isRequested
+      - operator: OR
+        firstValue: Seerr.isRequested
         action: EQUALS
         customValue:
           type: boolean
@@ -55,7 +57,8 @@ rules:
           type: text
           value: Perma
   - "3":
-      - firstValue: Sonarr.diskspace_remaining_gb
+      - operator: OR
+        firstValue: Sonarr.diskspace_remaining_gb
         action: SMALLER
         customValue:
           type: number
