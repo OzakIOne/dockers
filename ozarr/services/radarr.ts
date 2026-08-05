@@ -1,24 +1,6 @@
 import { Effect, Console, pipe, Ref } from "effect"
-import { RadarrClient } from "tsarr/radarr"
-import type { MediaManagementConfigResource } from "tsarr/radarr/types"
+import { createApi, configureFetcher } from "./__generated/radarr-fetcher"
 import { SetupState } from "./state"
-import { ApiError, stringifyError } from "./errors"
-
-const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>, label: string) =>
-  Effect.tryPromise(() => promise).pipe(
-    Effect.flatMap((result) => {
-      if (result.error !== undefined) {
-        return Effect.fail(
-          new ApiError({
-            service: "radarr",
-            status: result.response?.status ?? 0,
-            message: `${label}: ${stringifyError(result.error).slice(0, 200)}`,
-          }),
-        )
-      }
-      return Effect.succeed(result.data as T)
-    }),
-  )
 
 export const configure = Effect.fn("Radarr.configure")(function* () {
   const ref = yield* SetupState
@@ -29,19 +11,20 @@ export const configure = Effect.fn("Radarr.configure")(function* () {
   }
 
   yield* Console.log("Configuring Radarr...")
-  const client = new RadarrClient({ baseUrl: state.radarrUrl, apiKey: state.radarrKey })
+  configureFetcher({ getAuth: () => ({ X_Api_Key: state.radarrKey }) })
+  const api = createApi(state.radarrUrl.replace(/\/+$/, ""))
 
   yield* pipe(
-    wrap(client.addRootFolder("/data/media/movies"), "rootFolder"),
+    api.post("/api/v3/rootfolder", { body: { path: "/data/media/movies" } }),
     Effect.catchCause((e) =>
       Console.log(`  Radarr root folder (may already exist): ${String(e).slice(0, 120)}`),
     ),
   )
 
-  const mediaConfig: MediaManagementConfigResource = {
+  const mediaConfig = {
     id: 1,
     autoUnmonitorPreviouslyDownloadedMovies: false,
-    recycleBinPath: "",
+    recycleBin: "",
     recycleBinCleanupDays: 7,
     downloadPropersAndRepacks: "preferAndUpgrade",
     createEmptyMovieFolders: false,
@@ -60,7 +43,10 @@ export const configure = Effect.fn("Radarr.configure")(function* () {
   }
 
   yield* pipe(
-    wrap(client.updateMediaManagementConfig(1, mediaConfig), "mediaManagement"),
+    api.put("/api/v3/config/mediamanagement/{id}", {
+      path: { id: "1" },
+      body: mediaConfig,
+    }),
     Effect.catchCause((e) =>
       Console.log(`  Radarr media management: ${String(e).slice(0, 120)}`),
     ),
@@ -68,8 +54,8 @@ export const configure = Effect.fn("Radarr.configure")(function* () {
 
   if (state.qbPass) {
     yield* pipe(
-      wrap(
-        client.addDownloadClient({
+      api.post("/api/v3/downloadclient", {
+        body: {
           enable: true,
           protocol: "torrent",
           name: "qBittorrent",
@@ -84,9 +70,8 @@ export const configure = Effect.fn("Radarr.configure")(function* () {
             { name: "firstAndLast", value: true },
             { name: "useSsl", value: false },
           ],
-        }),
-        "downloadClient",
-      ),
+        },
+      }),
       Effect.catchCause((e) =>
         Console.log(`  Radarr download client: ${String(e).slice(0, 120)}`),
       ),

@@ -201,57 +201,6 @@ export const ignoreFail = <A, E, R>(
     }),
   );
 
-export const qbtSetPreferences = (
-  baseUrl: string,
-  username: string,
-  password: string,
-  prefs: Record<string, unknown>,
-) =>
-  Effect.tryPromise(async () => {
-    const loginRes = await fetch(`${baseUrl}/api/v2/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        Referer: baseUrl,
-      },
-      body: new URLSearchParams({ username, password }).toString(),
-    });
-    if (!loginRes.ok) {
-      throw new Error(`qBittorrent login failed (${loginRes.status})`);
-    }
-    const text = (await loginRes.text()).trim();
-    if (text && text !== "Ok.") {
-      throw new Error(
-        "qBittorrent authentication failed: invalid username or password",
-      );
-    }
-    const setCookie = loginRes.headers.get("set-cookie");
-    if (!setCookie) {
-      throw new Error(
-        "qBittorrent login succeeded but no SID cookie received",
-      );
-    }
-    const sidMatch = setCookie.match(/(SID|QBT_SID_\d+)=([^;]+)/);
-    if (!sidMatch) {
-      throw new Error("No SID cookie found");
-    }
-    const cookieHeader = `${sidMatch[1]}=${sidMatch[2]}`;
-
-    const prefsRes = await fetch(`${baseUrl}/api/v2/app/setPreferences`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Cookie: cookieHeader,
-      },
-      body: JSON.stringify({ json: prefs }),
-    });
-    if (!prefsRes.ok) {
-      throw new Error(
-        `qBittorrent setPreferences failed (${prefsRes.status})`,
-      );
-    }
-  });
-
 // ── Jellyfin helpers (uses X-MediaBrowser-Token) ──
 
 export const jellyfinPost = (

@@ -8,9 +8,6 @@ import {
 } from "effect"
 import { FetchHttpClient } from "effect/unstable/http"
 import { BunServices, BunRuntime } from "@effect/platform-bun"
-import { SonarrClient } from "tsarr/sonarr"
-import { RadarrClient } from "tsarr/radarr"
-import { ProwlarrClient } from "tsarr/prowlarr"
 import { mkdirSync, writeFileSync, copyFileSync, existsSync } from "node:fs"
 import { ConfigError, ApiError } from "./services/errors"
 

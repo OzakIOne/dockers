@@ -1,118 +1,139 @@
 // @ts-nocheck
-import type * as __TypedOpenapi from "./jellyfin.types.js";
+import type * as __TypedOpenapi from "./seerr.types.js";
 
   import { Effect, Schema, SchemaTransformation } from "effect";
 
-// <DefaultSchemas>
-const Boolean_default_false_prop = Schema.Boolean.pipe(Schema.withDecodingDefaultType(Effect.succeed(false)));
-const Boolean_default_true_prop = Schema.Boolean.pipe(Schema.withDecodingDefaultType(Effect.succeed(true)));
-const NullOr_default_System_prop = Schema.NullOr(Schema.String).pipe(Schema.withDecodingDefaultType(Effect.succeed("System")));
-const NullOr_default_X64_prop = Schema.NullOr(Schema.String).pipe(Schema.withDecodingDefaultType(Effect.succeed("X64")));
-
-// </DefaultSchemas>
-
 // <Schemas>
-export type DynamicDayOfWeek = __TypedOpenapi.Schemas.DynamicDayOfWeek;
-export const DynamicDayOfWeek = Schema.Literals(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Everyday", "Weekday", "Weekend"]);
+export type RadarrSettings = __TypedOpenapi.Schemas.RadarrSettings;
+export const RadarrSettings = Schema.Struct({ id: Schema.optional(Schema.Number), name: Schema.String, hostname: Schema.String, port: Schema.Number, apiKey: Schema.String, useSsl: Schema.Boolean, baseUrl: Schema.optional(Schema.String), activeProfileId: Schema.Number, activeProfileName: Schema.String, activeDirectory: Schema.String, is4k: Schema.Boolean, minimumAvailability: Schema.String, isDefault: Schema.Boolean, externalUrl: Schema.optional(Schema.String), syncEnabled: Schema.optional(Schema.Boolean), preventSearch: Schema.optional(Schema.Boolean) });
 
-export type AccessSchedule = __TypedOpenapi.Schemas.AccessSchedule;
-export const AccessSchedule = Schema.Struct({ Id: Schema.optional(Schema.Int), UserId: Schema.optional(Schema.String.check(Schema.isUUID())), DayOfWeek: Schema.optional(DynamicDayOfWeek.check(Schema.makeFilter((value) => Schema.is(Schema.Literals(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Everyday", "Weekday", "Weekend"]))(value)))), StartHour: Schema.optional(Schema.Number), EndHour: Schema.optional(Schema.Number) });
+export type SonarrSettings = __TypedOpenapi.Schemas.SonarrSettings;
+export const SonarrSettings = Schema.Struct({ id: Schema.optional(Schema.Number), name: Schema.String, hostname: Schema.String, port: Schema.Number, apiKey: Schema.String, useSsl: Schema.Boolean, baseUrl: Schema.optional(Schema.String), activeProfileId: Schema.Number, activeProfileName: Schema.String, activeDirectory: Schema.String, activeLanguageProfileId: Schema.optional(Schema.Number), activeAnimeProfileId: Schema.optional(Schema.NullOr(Schema.Number)), activeAnimeLanguageProfileId: Schema.optional(Schema.NullOr(Schema.Number)), activeAnimeProfileName: Schema.optional(Schema.NullOr(Schema.String)), activeAnimeDirectory: Schema.optional(Schema.NullOr(Schema.String)), is4k: Schema.Boolean, enableSeasonFolders: Schema.Boolean, isDefault: Schema.Boolean, externalUrl: Schema.optional(Schema.String), syncEnabled: Schema.optional(Schema.Boolean), preventSearch: Schema.optional(Schema.Boolean) });
 
-export type SubtitlePlaybackMode = __TypedOpenapi.Schemas.SubtitlePlaybackMode;
-export const SubtitlePlaybackMode = Schema.Literals(["Default", "Always", "OnlyForced", "None", "Smart"]);
-
-export type UserConfiguration = __TypedOpenapi.Schemas.UserConfiguration;
-export const UserConfiguration = Schema.Struct({ AudioLanguagePreference: Schema.optional(Schema.NullOr(Schema.String)), PlayDefaultAudioTrack: Schema.optional(Schema.Boolean), SubtitleLanguagePreference: Schema.optional(Schema.NullOr(Schema.String)), DisplayMissingEpisodes: Schema.optional(Schema.Boolean), GroupedFolders: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), SubtitleMode: Schema.optional(SubtitlePlaybackMode.check(Schema.makeFilter((value) => Schema.is(Schema.Literals(["Default", "Always", "OnlyForced", "None", "Smart"]))(value)))), DisplayCollectionsView: Schema.optional(Schema.Boolean), EnableLocalPassword: Schema.optional(Schema.Boolean), OrderedViews: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), LatestItemsExcludes: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), MyMediaExcludes: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), HidePlayedInLatest: Schema.optional(Schema.Boolean), RememberAudioSelections: Schema.optional(Schema.Boolean), RememberSubtitleSelections: Schema.optional(Schema.Boolean), EnableNextEpisodeAutoPlay: Schema.optional(Schema.Boolean), CastReceiverId: Schema.optional(Schema.NullOr(Schema.String)) });
-
-export type UnratedItem = __TypedOpenapi.Schemas.UnratedItem;
-export const UnratedItem = Schema.Literals(["Movie", "Trailer", "Series", "Music", "Book", "LiveTvChannel", "LiveTvProgram", "ChannelContent", "Other"]);
-
-export type SyncPlayUserAccessType = __TypedOpenapi.Schemas.SyncPlayUserAccessType;
-export const SyncPlayUserAccessType = Schema.Literals(["CreateAndJoinGroups", "JoinGroups", "None"]);
-
-export type UserPolicy = __TypedOpenapi.Schemas.UserPolicy;
-export const UserPolicy = Schema.Struct({ IsAdministrator: Schema.optional(Schema.Boolean), IsHidden: Schema.optional(Schema.Boolean), EnableCollectionManagement: Boolean_default_false_prop, EnableSubtitleManagement: Boolean_default_false_prop, EnableLyricManagement: Boolean_default_false_prop, IsDisabled: Schema.optional(Schema.Boolean), MaxParentalRating: Schema.optional(Schema.NullOr(Schema.Int)), MaxParentalSubRating: Schema.optional(Schema.NullOr(Schema.Int)), BlockedTags: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), AllowedTags: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), EnableUserPreferenceAccess: Schema.optional(Schema.Boolean), AccessSchedules: Schema.optional(Schema.NullOr(Schema.Array(AccessSchedule))), BlockUnratedItems: Schema.optional(Schema.NullOr(Schema.Array(UnratedItem))), EnableRemoteControlOfOtherUsers: Schema.optional(Schema.Boolean), EnableSharedDeviceControl: Schema.optional(Schema.Boolean), EnableRemoteAccess: Schema.optional(Schema.Boolean), EnableLiveTvManagement: Schema.optional(Schema.Boolean), EnableLiveTvAccess: Schema.optional(Schema.Boolean), EnableMediaPlayback: Schema.optional(Schema.Boolean), EnableAudioPlaybackTranscoding: Schema.optional(Schema.Boolean), EnableVideoPlaybackTranscoding: Schema.optional(Schema.Boolean), EnablePlaybackRemuxing: Schema.optional(Schema.Boolean), ForceRemoteSourceTranscoding: Schema.optional(Schema.Boolean), EnableContentDeletion: Schema.optional(Schema.Boolean), EnableContentDeletionFromFolders: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), EnableContentDownloading: Schema.optional(Schema.Boolean), EnableSyncTranscoding: Schema.optional(Schema.Boolean), EnableMediaConversion: Schema.optional(Schema.Boolean), EnabledDevices: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), EnableAllDevices: Schema.optional(Schema.Boolean), EnabledChannels: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), EnableAllChannels: Schema.optional(Schema.Boolean), EnabledFolders: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), EnableAllFolders: Schema.optional(Schema.Boolean), InvalidLoginAttemptCount: Schema.optional(Schema.Int), LoginAttemptsBeforeLockout: Schema.optional(Schema.Int), MaxActiveSessions: Schema.optional(Schema.Int), EnablePublicSharing: Schema.optional(Schema.Boolean), BlockedMediaFolders: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), BlockedChannels: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), RemoteClientBitrateLimit: Schema.optional(Schema.Int), AuthenticationProviderId: Schema.String.check(Schema.isMinLength(1)), PasswordResetProviderId: Schema.String.check(Schema.isMinLength(1)), SyncPlayAccess: Schema.optional(SyncPlayUserAccessType.check(Schema.makeFilter((value) => Schema.is(Schema.Literals(["CreateAndJoinGroups", "JoinGroups", "None"]))(value)))) });
-
-export type UserDto = __TypedOpenapi.Schemas.UserDto;
-export const UserDto = Schema.Struct({ Name: Schema.optional(Schema.NullOr(Schema.String)), ServerId: Schema.optional(Schema.NullOr(Schema.String)), ServerName: Schema.optional(Schema.NullOr(Schema.String)), Id: Schema.optional(Schema.String.check(Schema.isUUID())), PrimaryImageTag: Schema.optional(Schema.NullOr(Schema.String)), HasPassword: Schema.optional(Schema.NullOr(Schema.Boolean)), HasConfiguredPassword: Schema.optional(Schema.NullOr(Schema.Boolean)), HasConfiguredEasyPassword: Schema.optional(Schema.NullOr(Schema.Boolean)), EnableAutoLogin: Schema.optional(Schema.NullOr(Schema.Boolean)), LastLoginDate: Schema.optional(Schema.NullOr(Schema.String)), LastActivityDate: Schema.optional(Schema.NullOr(Schema.String)), Configuration: Schema.optional(Schema.NullOr(UserConfiguration)), Policy: Schema.optional(Schema.NullOr(UserPolicy)), PrimaryImageAspectRatio: Schema.optional(Schema.NullOr(Schema.Number)) });
-
-export type CastReceiverApplication = __TypedOpenapi.Schemas.CastReceiverApplication;
-export const CastReceiverApplication = Schema.Struct({ Id: Schema.String, Name: Schema.String });
-
-export type VersionInfo = __TypedOpenapi.Schemas.VersionInfo;
-export const VersionInfo = Schema.Struct({ version: Schema.optional(Schema.String), VersionNumber: Schema.optional(Schema.String), changelog: Schema.optional(Schema.NullOr(Schema.String)), targetAbi: Schema.optional(Schema.NullOr(Schema.String)), sourceUrl: Schema.optional(Schema.NullOr(Schema.String)), checksum: Schema.optional(Schema.NullOr(Schema.String)), timestamp: Schema.optional(Schema.NullOr(Schema.String)), repositoryName: Schema.optional(Schema.String), repositoryUrl: Schema.optional(Schema.String) });
-
-export type PackageInfo = __TypedOpenapi.Schemas.PackageInfo;
-export const PackageInfo = Schema.Struct({ name: Schema.optional(Schema.String), description: Schema.optional(Schema.String), overview: Schema.optional(Schema.String), owner: Schema.optional(Schema.String), category: Schema.optional(Schema.String), guid: Schema.optional(Schema.String.check(Schema.isUUID())), versions: Schema.optional(Schema.Array(VersionInfo)), imageUrl: Schema.optional(Schema.NullOr(Schema.String)) });
-
-export type InstallationInfo = __TypedOpenapi.Schemas.InstallationInfo;
-export const InstallationInfo = Schema.Struct({ Guid: Schema.optional(Schema.String.check(Schema.isUUID())), Name: Schema.optional(Schema.NullOr(Schema.String)), Version: Schema.optional(Schema.NullOr(Schema.String)), Changelog: Schema.optional(Schema.NullOr(Schema.String)), SourceUrl: Schema.optional(Schema.NullOr(Schema.String)), Checksum: Schema.optional(Schema.NullOr(Schema.String)), PackageInfo: Schema.optional(Schema.NullOr(PackageInfo)) });
-
-export type ProblemDetails = __TypedOpenapi.Schemas.ProblemDetails;
-export const ProblemDetails = Schema.StructWithRest(Schema.Struct({ type: Schema.optional(Schema.NullOr(Schema.String)), title: Schema.optional(Schema.NullOr(Schema.String)), status: Schema.optional(Schema.NullOr(Schema.Int)), detail: Schema.optional(Schema.NullOr(Schema.String)), instance: Schema.optional(Schema.NullOr(Schema.String)) }), [Schema.Record(Schema.String, Schema.Unknown)]);
-
-export type RepositoryInfo = __TypedOpenapi.Schemas.RepositoryInfo;
-export const RepositoryInfo = Schema.Struct({ Name: Schema.optional(Schema.NullOr(Schema.String)), Url: Schema.optional(Schema.NullOr(Schema.String)), Enabled: Schema.optional(Schema.Boolean) });
-
-export type SystemInfo = __TypedOpenapi.Schemas.SystemInfo;
-export const SystemInfo = Schema.Struct({ LocalAddress: Schema.optional(Schema.NullOr(Schema.String)), ServerName: Schema.optional(Schema.NullOr(Schema.String)), Version: Schema.optional(Schema.NullOr(Schema.String)), ProductName: Schema.optional(Schema.NullOr(Schema.String)), OperatingSystem: Schema.optional(Schema.NullOr(Schema.String)), Id: Schema.optional(Schema.NullOr(Schema.String)), StartupWizardCompleted: Schema.optional(Schema.NullOr(Schema.Boolean)), OperatingSystemDisplayName: Schema.optional(Schema.NullOr(Schema.String)), PackageName: Schema.optional(Schema.NullOr(Schema.String)), HasPendingRestart: Schema.optional(Schema.Boolean), IsShuttingDown: Schema.optional(Schema.Boolean), SupportsLibraryMonitor: Schema.optional(Schema.Boolean), WebSocketPortNumber: Schema.optional(Schema.Int), CompletedInstallations: Schema.optional(Schema.NullOr(Schema.Array(InstallationInfo))), CanSelfRestart: Boolean_default_true_prop, CanLaunchWebBrowser: Boolean_default_false_prop, ProgramDataPath: Schema.optional(Schema.NullOr(Schema.String)), WebPath: Schema.optional(Schema.NullOr(Schema.String)), ItemsByNamePath: Schema.optional(Schema.NullOr(Schema.String)), CachePath: Schema.optional(Schema.NullOr(Schema.String)), LogPath: Schema.optional(Schema.NullOr(Schema.String)), InternalMetadataPath: Schema.optional(Schema.NullOr(Schema.String)), TranscodingTempPath: Schema.optional(Schema.NullOr(Schema.String)), CastReceiverApplications: Schema.optional(Schema.NullOr(Schema.Array(CastReceiverApplication))), HasUpdateAvailable: Boolean_default_false_prop, EncoderLocation: NullOr_default_System_prop, SystemArchitecture: NullOr_default_X64_prop });
+export type ServiceProfile = __TypedOpenapi.Schemas.ServiceProfile;
+export const ServiceProfile = Schema.Struct({ id: Schema.optional(Schema.Number), name: Schema.optional(Schema.String) });
 
 // </Schemas>
 
 // <Endpoints>
-export type post_InstallPackage = __TypedOpenapi.Endpoints.post_InstallPackage;
-export const post_InstallPackage = {
-  method: Schema.Literal("POST"),
-  path: Schema.Literal("/Packages/Installed/{name}"),
+export type get__status = __TypedOpenapi.Endpoints.get__status;
+export const get__status = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/status"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
-  parameters: { query: Schema.optional(Schema.Struct({ assemblyGuid: Schema.optional(Schema.String.check(Schema.isUUID())), version: Schema.optional(Schema.String), repositoryUrl: Schema.optional(Schema.String) })), path: Schema.Struct({ name: Schema.String }) },
-  responses: { 204: Schema.Unknown, 401: Schema.Unknown, 403: Schema.Unknown, 404: Schema.Union([ProblemDetails, ProblemDetails, ProblemDetails]), 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  parameters: { query: Schema.optional(Schema.Struct({ checkUpdateAvailable: Schema.optional(Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a })))) })) },
+  responses: { 200: Schema.Struct({ version: Schema.optional(Schema.String), commitTag: Schema.optional(Schema.String), updateAvailable: Schema.optional(Schema.Boolean), commitsBehind: Schema.optional(Schema.Number), restartRequired: Schema.optional(Schema.Boolean) }) },
 };
 
-export type get_GetRepositories = __TypedOpenapi.Endpoints.get_GetRepositories;
-export const get_GetRepositories = {
+export type get__settings_radarr = __TypedOpenapi.Endpoints.get__settings_radarr;
+export const get__settings_radarr = {
   method: Schema.Literal("GET"),
-  path: Schema.Literal("/Repositories"),
+  path: Schema.Literal("/settings/radarr"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
   parameters: Schema.Never,
-  responses: { 200: Schema.Union([Schema.Array(RepositoryInfo), Schema.Array(RepositoryInfo), Schema.Array(RepositoryInfo)]), 401: Schema.Unknown, 403: Schema.Unknown, 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  responses: { 200: Schema.Array(RadarrSettings) },
 };
 
-export type post_SetRepositories = __TypedOpenapi.Endpoints.post_SetRepositories;
-export const post_SetRepositories = {
+export type post__settings_radarr = __TypedOpenapi.Endpoints.post__settings_radarr;
+export const post__settings_radarr = {
   method: Schema.Literal("POST"),
-  path: Schema.Literal("/Repositories"),
+  path: Schema.Literal("/settings/radarr"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
-  parameters: { body: Schema.Array(RepositoryInfo) },
-  responses: { 204: Schema.Unknown, 401: Schema.Unknown, 403: Schema.Unknown, 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  parameters: { body: RadarrSettings },
+  responses: { 201: RadarrSettings },
 };
 
-export type get_GetSystemInfo = __TypedOpenapi.Endpoints.get_GetSystemInfo;
-export const get_GetSystemInfo = {
+export type post__settings_radarr_test = __TypedOpenapi.Endpoints.post__settings_radarr_test;
+export const post__settings_radarr_test = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/settings/radarr/test"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { body: Schema.Struct({ hostname: Schema.String, port: Schema.Number, apiKey: Schema.String, useSsl: Schema.Boolean, baseUrl: Schema.optional(Schema.String) }) },
+  responses: { 200: Schema.Struct({ profiles: Schema.optional(Schema.Array(ServiceProfile)) }) },
+};
+
+export type put__settings_radarr_RadarrId = __TypedOpenapi.Endpoints.put__settings_radarr_RadarrId;
+export const put__settings_radarr_RadarrId = {
+  method: Schema.Literal("PUT"),
+  path: Schema.Literal("/settings/radarr/{radarrId}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ radarrId: Schema.NumberFromString.check(Schema.isInt()) }), body: RadarrSettings },
+  responses: { 200: RadarrSettings },
+};
+
+export type delete__settings_radarr_RadarrId = __TypedOpenapi.Endpoints.delete__settings_radarr_RadarrId;
+export const delete__settings_radarr_RadarrId = {
+  method: Schema.Literal("DELETE"),
+  path: Schema.Literal("/settings/radarr/{radarrId}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ radarrId: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: RadarrSettings },
+};
+
+export type get__settings_radarr_RadarrId_profiles = __TypedOpenapi.Endpoints.get__settings_radarr_RadarrId_profiles;
+export const get__settings_radarr_RadarrId_profiles = {
   method: Schema.Literal("GET"),
-  path: Schema.Literal("/System/Info"),
+  path: Schema.Literal("/settings/radarr/{radarrId}/profiles"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ radarrId: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: Schema.Array(ServiceProfile) },
+};
+
+export type get__settings_sonarr = __TypedOpenapi.Endpoints.get__settings_sonarr;
+export const get__settings_sonarr = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/settings/sonarr"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
   parameters: Schema.Never,
-  responses: { 200: Schema.Union([SystemInfo, SystemInfo, SystemInfo]), 401: Schema.Unknown, 403: Schema.Union([ProblemDetails, ProblemDetails, ProblemDetails]), 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  responses: { 200: Schema.Array(SonarrSettings) },
 };
 
-export type get_GetUsers = __TypedOpenapi.Endpoints.get_GetUsers;
-export const get_GetUsers = {
-  method: Schema.Literal("GET"),
-  path: Schema.Literal("/Users"),
+export type post__settings_sonarr = __TypedOpenapi.Endpoints.post__settings_sonarr;
+export const post__settings_sonarr = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/settings/sonarr"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
-  parameters: { query: Schema.optional(Schema.Struct({ isHidden: Schema.optional(Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a })))), isDisabled: Schema.optional(Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a })))) })) },
-  responses: { 200: Schema.Union([Schema.Array(UserDto), Schema.Array(UserDto), Schema.Array(UserDto)]), 401: Schema.Unknown, 403: Schema.Unknown, 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  parameters: { body: SonarrSettings },
+  responses: { 201: SonarrSettings },
+};
+
+export type post__settings_sonarr_test = __TypedOpenapi.Endpoints.post__settings_sonarr_test;
+export const post__settings_sonarr_test = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/settings/sonarr/test"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { body: Schema.Struct({ hostname: Schema.String, port: Schema.Number, apiKey: Schema.String, useSsl: Schema.Boolean, baseUrl: Schema.optional(Schema.String) }) },
+  responses: { 200: Schema.Struct({ profiles: Schema.optional(Schema.Array(ServiceProfile)) }) },
+};
+
+export type put__settings_sonarr_SonarrId = __TypedOpenapi.Endpoints.put__settings_sonarr_SonarrId;
+export const put__settings_sonarr_SonarrId = {
+  method: Schema.Literal("PUT"),
+  path: Schema.Literal("/settings/sonarr/{sonarrId}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ sonarrId: Schema.NumberFromString.check(Schema.isInt()) }), body: SonarrSettings },
+  responses: { 200: SonarrSettings },
+};
+
+export type delete__settings_sonarr_SonarrId = __TypedOpenapi.Endpoints.delete__settings_sonarr_SonarrId;
+export const delete__settings_sonarr_SonarrId = {
+  method: Schema.Literal("DELETE"),
+  path: Schema.Literal("/settings/sonarr/{sonarrId}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ sonarrId: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: SonarrSettings },
 };
 
 // </Endpoints>
@@ -120,14 +141,25 @@ export const get_GetUsers = {
   
      // <EndpointByMethod>
      export const EndpointByMethod: __TypedOpenapi.EndpointByMethod = {
-     post: {
-           "/Packages/Installed/{name}": post_InstallPackage as any,
-"/Repositories": post_SetRepositories as any
+     get: {
+           "/status": get__status as any,
+"/settings/radarr": get__settings_radarr as any,
+"/settings/radarr/{radarrId}/profiles": get__settings_radarr_RadarrId_profiles as any,
+"/settings/sonarr": get__settings_sonarr as any
          },
-get: {
-           "/Repositories": get_GetRepositories as any,
-"/System/Info": get_GetSystemInfo as any,
-"/Users": get_GetUsers as any
+post: {
+           "/settings/radarr": post__settings_radarr as any,
+"/settings/radarr/test": post__settings_radarr_test as any,
+"/settings/sonarr": post__settings_sonarr as any,
+"/settings/sonarr/test": post__settings_sonarr_test as any
+         },
+put: {
+           "/settings/radarr/{radarrId}": put__settings_radarr_RadarrId as any,
+"/settings/sonarr/{sonarrId}": put__settings_sonarr_SonarrId as any
+         },
+delete: {
+           "/settings/radarr/{radarrId}": delete__settings_radarr_RadarrId as any,
+"/settings/sonarr/{sonarrId}": delete__settings_sonarr_SonarrId as any
          }
      }
      export type EndpointByMethod = __TypedOpenapi.EndpointByMethod;
@@ -135,8 +167,10 @@ get: {
      
 
     // <EndpointByMethod.Shorthands>
-    export type PostEndpoints = EndpointByMethod["post"]
-export type GetEndpoints = EndpointByMethod["get"]
+    export type GetEndpoints = EndpointByMethod["get"]
+export type PostEndpoints = EndpointByMethod["post"]
+export type PutEndpoints = EndpointByMethod["put"]
+export type DeleteEndpoints = EndpointByMethod["delete"]
     // </EndpointByMethod.Shorthands>
     
   
@@ -175,10 +209,10 @@ export type SecurityRequirements = readonly (readonly string[])[];
 
     // <EndpointSecurityRequirements>
     /** OpenAPI security requirements applied when an endpoint has no explicit entry. */
-    export const defaultSecurityRequirements = [["CustomAuthentication"]] as SecurityRequirements;
+    export const defaultSecurityRequirements = [["cookieAuth"],["apiKey"]] as SecurityRequirements;
     /** Endpoint-specific security requirements that differ from the default. */
     export const endpointSecurityRequirements = {
-    
+    get: { "/status": [] }
     } as Partial<{ [M in keyof EndpointByMethod]: Partial<{ [P in keyof EndpointByMethod[M]]: SecurityRequirements }> }>;
     // </EndpointSecurityRequirements>
     
@@ -466,7 +500,7 @@ export class EffectApiClient {
   baseUrl: string = "";
   successStatusCodes = successStatusCodes;
   errorStatusCodes = errorStatusCodes;
-  validate: ValidateSide = "both";
+  validate: ValidateSide = "none";
   onValidate?: OnValidate;
   private effectFetcher: EffectFetcher;
 
@@ -678,7 +712,17 @@ export class EffectApiClient {
     });
   }
 
-  post<Path extends keyof PostEndpoints, TEndpoint extends PostEndpoints[Path]>(
+  get<Path extends keyof GetEndpoints, TEndpoint extends GetEndpoints[Path]>(
+    path: Path,
+    ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
+  ): Effect.Effect<
+    InferSuccessData<TEndpoint>,
+    TypedStatusError | HttpClientError,
+    never
+  > {
+    return this.request<"get", Path, GetEndpoints[Path]>("get", path, ...params);
+  }
+post<Path extends keyof PostEndpoints, TEndpoint extends PostEndpoints[Path]>(
     path: Path,
     ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
   ): Effect.Effect<
@@ -688,7 +732,7 @@ export class EffectApiClient {
   > {
     return this.request<"post", Path, PostEndpoints[Path]>("post", path, ...params);
   }
-get<Path extends keyof GetEndpoints, TEndpoint extends GetEndpoints[Path]>(
+put<Path extends keyof PutEndpoints, TEndpoint extends PutEndpoints[Path]>(
     path: Path,
     ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
   ): Effect.Effect<
@@ -696,7 +740,17 @@ get<Path extends keyof GetEndpoints, TEndpoint extends GetEndpoints[Path]>(
     TypedStatusError | HttpClientError,
     never
   > {
-    return this.request<"get", Path, GetEndpoints[Path]>("get", path, ...params);
+    return this.request<"put", Path, PutEndpoints[Path]>("put", path, ...params);
+  }
+delete<Path extends keyof DeleteEndpoints, TEndpoint extends DeleteEndpoints[Path]>(
+    path: Path,
+    ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
+  ): Effect.Effect<
+    InferSuccessData<TEndpoint>,
+    TypedStatusError | HttpClientError,
+    never
+  > {
+    return this.request<"delete", Path, DeleteEndpoints[Path]>("delete", path, ...params);
   }
 }
 

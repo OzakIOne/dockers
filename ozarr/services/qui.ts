@@ -73,6 +73,63 @@ const enableOrphanScan = async (
   }
 }
 
+const setQBPreferences = async (
+  baseUrl: string,
+  cookie: string,
+  instanceId: number,
+): Promise<void> => {
+  const resp = await fetch(`${baseUrl}/api/instances/${instanceId}/preferences`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "Cookie": cookie,
+    },
+    body: JSON.stringify({
+      alternative_webui_enabled: true,
+      alternative_webui_path: "/vuetorrent",
+      autorun_enabled: true,
+      autorun_program: 'chmod -R 775 "%F/"',
+      save_path: "/data/downloads/torrents/",
+      temp_path_enabled: false,
+      auto_tmm_enabled: true,
+      torrent_changed_tmm_enabled: true,
+      save_path_changed_tmm_enabled: true,
+      category_changed_tmm_enabled: true,
+    }),
+  })
+  if (!resp.ok) {
+    const body = await resp.text()
+    throw new Error(`qui qBittorrent preferences returned ${resp.status}: ${body.slice(0, 200)}`)
+  }
+}
+
+const createQBCategories = async (
+  baseUrl: string,
+  cookie: string,
+  instanceId: number,
+): Promise<void> => {
+  const categories = [
+    { name: "sonarr", savePath: "/data/downloads/torrents/tv" },
+    { name: "radarr", savePath: "/data/downloads/torrents/movies" },
+  ]
+  for (const cat of categories) {
+    const resp = await fetch(`${baseUrl}/api/instances/${instanceId}/categories`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Cookie": cookie,
+      },
+      body: JSON.stringify(cat),
+    })
+    if (!resp.ok) {
+      const body = await resp.text()
+      throw new Error(
+        `qui qBittorrent category ${cat.name} returned ${resp.status}: ${body.slice(0, 200)}`,
+      )
+    }
+  }
+}
+
 const createArrInstance = async (
   baseUrl: string,
   cookie: string,
@@ -263,6 +320,22 @@ export const configure = Effect.fn("Qui.configure")(function* () {
   )
 
   if (instanceId) {
+    yield* pipe(
+      Effect.tryPromise(() => setQBPreferences(state.quiUrl, cookie, instanceId)),
+      Effect.tap(() => Console.log("  qui: qBittorrent preferences set")),
+      Effect.catchCause((cause) =>
+        Console.log(`  qui qBittorrent preferences: ${String(cause).slice(0, 180)}`),
+      ),
+    )
+
+    yield* pipe(
+      Effect.tryPromise(() => createQBCategories(state.quiUrl, cookie, instanceId)),
+      Effect.tap(() => Console.log("  qui: qBittorrent categories created")),
+      Effect.catchCause((cause) =>
+        Console.log(`  qui qBittorrent categories: ${String(cause).slice(0, 180)}`),
+      ),
+    )
+
     yield* pipe(
       Effect.tryPromise(() => enableOrphanScan(state.quiUrl, cookie, instanceId)),
       Effect.tap(() => Console.log("  qui: orphan scan enabled")),

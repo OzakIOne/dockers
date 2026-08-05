@@ -12,8 +12,37 @@ const specs: Array<{
   local?: string
   ext: string
   endpoint?: string
+  validateSide?: string
   patch?: (fetcher: string) => string
 }> = [
+  {
+    name: "sonarr",
+    url: "https://raw.githubusercontent.com/Sonarr/Sonarr/refs/heads/v5-develop/src/Sonarr.Api.V5/openapi.json",
+    ext: "json",
+    endpoint: "^/api/v5/(rootfolder|settings/mediamanagement|downloadclient)(/|$)",
+    validateSide: "none",
+  },
+  {
+    name: "radarr",
+    url: "https://raw.githubusercontent.com/Radarr/Radarr/develop/src/Radarr.Api.V3/openapi.json",
+    ext: "json",
+    endpoint: "^/api/v3/(rootfolder|config/mediamanagement|downloadclient)(/|$)",
+    validateSide: "none",
+  },
+  {
+    name: "prowlarr",
+    url: "https://raw.githubusercontent.com/Prowlarr/Prowlarr/develop/src/Prowlarr.Api.V1/openapi.json",
+    ext: "json",
+    endpoint: "^/api/v1/(applications|indexer|downloadclient)(/|$)",
+    validateSide: "none",
+  },
+  {
+    name: "seerr",
+    url: "https://raw.githubusercontent.com/seerr-team/seerr/refs/heads/develop/seerr-api.yml",
+    ext: "yaml",
+    endpoint: "^/status$|^/settings/(sonarr|radarr)(/|$)",
+    validateSide: "none",
+  },
   {
     name: "jellyfin",
     url: "https://api.jellyfin.org/openapi/jellyfin-openapi-stable.json",
@@ -47,7 +76,7 @@ const force = Bun.argv.includes("--force") || Bun.argv.includes("-f")
 
 await mkdir(CACHE_DIR, { recursive: true })
 
-for (const { name, url, local, ext, endpoint, patch } of specs) {
+for (const { name, url, local, ext, endpoint, validateSide, patch } of specs) {
   const cachePath = `${CACHE_DIR}/${name}.${ext}`
 
   if (!force && existsSync(cachePath)) {
@@ -69,6 +98,7 @@ for (const { name, url, local, ext, endpoint, patch } of specs) {
     "--output", `${SPECS_DIR}/${name}.ts`,
     "--coerce",
   ]
+  if (validateSide) args.push("--validate-side", validateSide)
   if (endpoint) args.push("--endpoint", endpoint)
 
   await $`bunx typed-openapi ${args}`

@@ -58,7 +58,6 @@ const shouldRun = (...svcs: string[]) =>
   !TARGET_SERVICE || svcs.includes(TARGET_SERVICE)
 
 const WITH = {
-  qbittorrent: shouldRun("qbittorrent", "sonarr", "radarr"),
   sonarr: shouldRun("sonarr"),
   radarr: shouldRun("radarr"),
   prowlarr: shouldRun("prowlarr"),
@@ -109,7 +108,6 @@ const program = Effect.gen(function* () {
     )
 
   const sm = {
-    qbt: yield* tryImport<typeof import("./services/qbittorrent")>("./services/qbittorrent", "qBittorrent"),
     sonarr: yield* tryImport<typeof import("./services/sonarr")>("./services/sonarr", "Sonarr"),
     radarr: yield* tryImport<typeof import("./services/radarr")>("./services/radarr", "Radarr"),
     prowlarr: yield* tryImport<typeof import("./services/prowlarr")>("./services/prowlarr", "Prowlarr"),
@@ -121,7 +119,7 @@ const program = Effect.gen(function* () {
     qui: yield* tryImport<typeof import("./services/qui")>("./services/qui", "qui"),
   }
 
-  if (WITH.qbittorrent && sm.qbt) yield* withState(sm.qbt.preSeedCategories())
+  if (WITH.wizarr && sm.wizarr) yield* withState(sm.wizarr.configure())
 
   yield* Docker.up()
 
@@ -131,16 +129,11 @@ const program = Effect.gen(function* () {
   if (shouldRun("sonarr", "prowlarr", "seerr")) waits.push(["http://localhost:8989/ping", "Sonarr"])
   if (shouldRun("radarr", "prowlarr", "seerr")) waits.push(["http://localhost:7878/ping", "Radarr"])
   if (shouldRun("prowlarr")) waits.push(["http://localhost:9696/ping", "Prowlarr"])
-  if (shouldRun("qbittorrent", "sonarr", "radarr")) waits.push(["http://localhost:6767/", "qBittorrent"])
+  if (shouldRun("qbittorrent", "sonarr", "radarr", "qui")) waits.push(["http://localhost:6767/", "qBittorrent"])
   if (shouldRun("jellyfin")) waits.push(["http://localhost:8096/web/", "Jellyfin"])
   if (shouldRun("maintainerr")) waits.push(["http://localhost:6246/", "Maintainerr"])
   if (shouldRun("qui")) waits.push(["http://localhost:7476/health", "qui"])
   yield* Wait.all(waits)
-
-  if (shouldRun("qbittorrent", "sonarr", "radarr") && sm.qbt) {
-    yield* withState(sm.qbt.verifyConnection())
-    if (shouldRun("qbittorrent")) yield* withState(sm.qbt.setPreferences())
-  }
 
   if (WITH.sonarr && sm.sonarr) yield* withState(sm.sonarr.configure())
   if (WITH.radarr && sm.radarr) yield* withState(sm.radarr.configure())

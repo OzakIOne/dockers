@@ -15,7 +15,7 @@
  * 4. Customize error handling and headers as needed
  */
 
-import { type Fetcher, type RequestFormat, createEffectApiClient } from "./jellyfin.ts";
+import { type Fetcher, type RequestFormat, createEffectApiClient } from "./prowlarr.ts";
 
 // Basic configuration. Pass an explicit URL to createApi() in browser-only runtimes.
 const API_BASE_URL =
@@ -84,14 +84,17 @@ const encodeRequestBody = ((requestFormat, body) => {
 ) => { body?: BodyInit; contentType?: string };
 
 export type AuthCredentials = {
-  /** API key header parameter */
-  "CustomAuthentication"?: string;
+  /** Apikey passed as header */
+  "X_Api_Key"?: string;
+  /** Apikey passed as query parameter */
+  "apikey"?: string;
 };
 
 export type SecurityRequirements = readonly (readonly string[])[];
 
 const securitySchemeProperties: Record<string, keyof AuthCredentials> = {
-  "CustomAuthentication": "CustomAuthentication",
+  "X-Api-Key": "X_Api_Key",
+  "apikey": "apikey",
 };
 
 /** Pick the first OpenAPI security requirement satisfied by the available credentials. */
@@ -112,9 +115,10 @@ const selectSecuritySchemes = (auth: AuthCredentials, requirements: SecurityRequ
  * Pass tokens via `getAuth` on the default fetcher.
  * Bearer tokens may be raw or already prefixed with `Bearer `.
  */
-export const applyAuth = (headers: Headers, _url: URL, auth: AuthCredentials, requirements: SecurityRequirements): void => {
+export const applyAuth = (headers: Headers, url: URL, auth: AuthCredentials, requirements: SecurityRequirements): void => {
   const allowed = selectSecuritySchemes(auth, requirements);
-  if (allowed.has("CustomAuthentication") && auth["CustomAuthentication"]) headers.set("X-MediaBrowser-Token", auth["CustomAuthentication"]!);
+  if (allowed.has("X_Api_Key") && auth["X_Api_Key"]) headers.set("X-Api-Key", auth["X_Api_Key"]!);
+  if (allowed.has("apikey") && auth["apikey"]) url.searchParams.set("apikey", auth["apikey"]!);
 };
 
 

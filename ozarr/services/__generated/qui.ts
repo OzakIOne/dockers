@@ -9,7 +9,7 @@ const Schema_default_0_prop = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0),
 const Boolean_default_true_prop = Schema.Boolean.pipe(Schema.withDecodingDefaultType(Effect.succeed(true)));
 const Int_default_0_prop = Schema.Int.pipe(Schema.withDecodingDefaultType(Effect.succeed(0)));
 const Int_default_15_prop = Schema.Int.pipe(Schema.withDecodingDefaultType(Effect.succeed(15)));
-const Array_default_value_prop = Schema.Array(Schema.suspend(() => PathMapping)).pipe(Schema.withDecodingDefaultType(Effect.succeed([])));
+const Array_default_value_prop = Schema.suspend(() => Schema.Array(Schema.suspend(() => PathMapping))).pipe(Schema.withDecodingDefaultType(Effect.succeed([])));
 const Union_default_false_prop = Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a }))).pipe(Schema.withDecodingDefaultType(Effect.succeed(false)));
 const Schema_default_0_prop_7 = Schema.NumberFromString.check(Schema.isInt()).pipe(Schema.withDecodingDefaultType(Effect.succeed(0)));
 const Schema_default_500_prop = Schema.NumberFromString.check(Schema.isInt(), Schema.isLessThanOrEqualTo(2000)).pipe(Schema.withDecodingDefaultType(Effect.succeed(500)));

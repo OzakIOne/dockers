@@ -1,24 +1,6 @@
 import { Effect, Console, pipe, Ref } from "effect"
-import { SonarrClient } from "tsarr/sonarr"
-import type { MediaManagementConfigResource } from "tsarr/sonarr/types"
+import { createApi, configureFetcher } from "./__generated/sonarr-fetcher"
 import { SetupState } from "./state"
-import { ApiError, stringifyError } from "./errors"
-
-const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>, label: string) =>
-  Effect.tryPromise(() => promise).pipe(
-    Effect.flatMap((result) => {
-      if (result.error !== undefined) {
-        return Effect.fail(
-          new ApiError({
-            service: "sonarr",
-            status: result.response?.status ?? 0,
-            message: `${label}: ${stringifyError(result.error).slice(0, 200)}`,
-          }),
-        )
-      }
-      return Effect.succeed(result.data as T)
-    }),
-  )
 
 export const configure = Effect.fn("Sonarr.configure")(function* () {
   const ref = yield* SetupState
@@ -29,16 +11,17 @@ export const configure = Effect.fn("Sonarr.configure")(function* () {
   }
 
   yield* Console.log("Configuring Sonarr...")
-  const client = new SonarrClient({ baseUrl: state.sonarrUrl, apiKey: state.sonarrKey })
+  configureFetcher({ getAuth: () => ({ X_Api_Key: state.sonarrKey }) })
+  const api = createApi(state.sonarrUrl.replace(/\/+$/, ""))
 
   yield* pipe(
-    wrap(client.addRootFolder("/data/media/tv"), "rootFolder"),
+    api.post("/api/v5/rootfolder", { body: { path: "/data/media/tv" } }),
     Effect.catchCause((e) =>
       Console.log(`  Sonarr root folder (may already exist): ${String(e).slice(0, 120)}`),
     ),
   )
 
-  const mediaConfig: MediaManagementConfigResource = {
+  const mediaConfig = {
     id: 1,
     autoUnmonitorPreviouslyDownloadedEpisodes: false,
     recycleBin: "",
@@ -59,7 +42,10 @@ export const configure = Effect.fn("Sonarr.configure")(function* () {
   }
 
   yield* pipe(
-    wrap(client.updateMediaManagementConfig("1", mediaConfig), "mediaManagement"),
+    api.put("/api/v5/settings/mediamanagement/{id}", {
+      path: { id: "1" },
+      body: mediaConfig,
+    }),
     Effect.catchCause((e) =>
       Console.log(`  Sonarr media management: ${String(e).slice(0, 120)}`),
     ),
@@ -67,8 +53,8 @@ export const configure = Effect.fn("Sonarr.configure")(function* () {
 
   if (state.qbPass) {
     yield* pipe(
-      wrap(
-        client.addDownloadClient({
+      api.post("/api/v5/downloadclient", {
+        body: {
           enable: true,
           protocol: "torrent",
           name: "qBittorrent",
@@ -83,9 +69,8 @@ export const configure = Effect.fn("Sonarr.configure")(function* () {
             { name: "firstAndLast", value: true },
             { name: "useSsl", value: false },
           ],
-        }),
-        "downloadClient",
-      ),
+        },
+      }),
       Effect.catchCause((e) =>
         Console.log(`  Sonarr download client: ${String(e).slice(0, 120)}`),
       ),

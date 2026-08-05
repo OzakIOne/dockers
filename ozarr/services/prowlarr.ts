@@ -1,24 +1,6 @@
 import { Effect, Console, pipe, Ref } from "effect"
-import { ProwlarrClient } from "tsarr/prowlarr"
-import type { ApplicationResource } from "tsarr/prowlarr/types"
+import { createApi, configureFetcher } from "./__generated/prowlarr-fetcher"
 import { SetupState } from "./state"
-import { ApiError, stringifyError } from "./errors"
-
-const wrap = <T>(promise: Promise<{ data?: T; error?: unknown; response?: Response }>, label: string) =>
-  Effect.tryPromise(() => promise).pipe(
-    Effect.flatMap((result) => {
-      if (result.error !== undefined) {
-        return Effect.fail(
-          new ApiError({
-            service: "prowlarr",
-            status: result.response?.status ?? 0,
-            message: `${label}: ${stringifyError(result.error).slice(0, 200)}`,
-          }),
-        )
-      }
-      return Effect.succeed(result.data as T)
-    }),
-  )
 
 export const configure = Effect.fn("Prowlarr.configure")(function* () {
   const ref = yield* SetupState
@@ -29,39 +11,41 @@ export const configure = Effect.fn("Prowlarr.configure")(function* () {
   }
 
   yield* Console.log("Configuring Prowlarr...")
-  const client = new ProwlarrClient({ baseUrl: state.prowlarrUrl, apiKey: state.prowlarrKey })
+  configureFetcher({ getAuth: () => ({ X_Api_Key: state.prowlarrKey }) })
+  const api = createApi(state.prowlarrUrl.replace(/\/+$/, ""))
 
   yield* pipe(
-    Effect.tryPromise(() =>
-      client.addIndexer({
+    api.post("/api/v1/indexer", {
+      body: {
         name: "FlareSolverr",
         implementation: "FlareSolverr",
         configContract: "FlareSolverrSettings",
         fields: [{ name: "host", value: "http://flaresolverr:8191" }],
         tags: [{ id: 0, label: "flare" }],
-      }),
-    ),
+      },
+    }),
     Effect.catchCause((e) =>
       Console.log(`  Prowlarr FlareSolverr (may already exist): ${String(e).slice(0, 120)}`),
     ),
   )
 
   if (state.sonarrKey) {
-    const sonarrApp: ApplicationResource = {
-      name: "Sonarr",
-      implementation: "Sonarr",
-      configContract: "SonarrSettings",
-      syncLevel: "fullSync",
-      fields: [
-        { name: "baseUrl", value: "http://sonarr:8989" },
-        { name: "apiKey", value: state.sonarrKey },
-        { name: "prowlarrUrl", value: "http://prowlarr:9696" },
-        { name: "syncCategories", value: [5000, 5001, 5002, 5003, 5004, 5005] },
-      ],
-      tags: [],
-    }
     yield* pipe(
-      wrap(client.addApplication(sonarrApp), "sonarrApp"),
+      api.post("/api/v1/applications", {
+        body: {
+          name: "Sonarr",
+          implementation: "Sonarr",
+          configContract: "SonarrSettings",
+          syncLevel: "fullSync",
+          fields: [
+            { name: "baseUrl", value: "http://sonarr:8989" },
+            { name: "apiKey", value: state.sonarrKey },
+            { name: "prowlarrUrl", value: "http://prowlarr:9696" },
+            { name: "syncCategories", value: [5000, 5001, 5002, 5003, 5004, 5005] },
+          ],
+          tags: [],
+        },
+      }),
       Effect.catchCause((e) =>
         Console.log(`  Prowlarr → Sonarr app (may already exist): ${String(e).slice(0, 120)}`),
       ),
@@ -69,32 +53,32 @@ export const configure = Effect.fn("Prowlarr.configure")(function* () {
   }
 
   if (state.radarrKey) {
-    const radarrApp: ApplicationResource = {
-      name: "Radarr",
-      implementation: "Radarr",
-      configContract: "RadarrSettings",
-      syncLevel: "fullSync",
-      fields: [
-        { name: "baseUrl", value: "http://radarr:7878" },
-        { name: "apiKey", value: state.radarrKey },
-        { name: "prowlarrUrl", value: "http://prowlarr:9696" },
-        { name: "syncCategories", value: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080] },
-      ],
-      tags: [],
-    }
     yield* pipe(
-      wrap(client.addApplication(radarrApp), "radarrApp"),
+      api.post("/api/v1/applications", {
+        body: {
+          name: "Radarr",
+          implementation: "Radarr",
+          configContract: "RadarrSettings",
+          syncLevel: "fullSync",
+          fields: [
+            { name: "baseUrl", value: "http://radarr:7878" },
+            { name: "apiKey", value: state.radarrKey },
+            { name: "prowlarrUrl", value: "http://prowlarr:9696" },
+            { name: "syncCategories", value: [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080] },
+          ],
+          tags: [],
+        },
+      }),
       Effect.catchCause((e) =>
         Console.log(`  Prowlarr → Radarr app (may already exist): ${String(e).slice(0, 120)}`),
       ),
     )
   }
 
-  const effectiveQbPass = state.qbPass
-  if (effectiveQbPass) {
+  if (state.qbPass) {
     yield* pipe(
-      wrap(
-        client.addDownloadClient({
+      api.post("/api/v1/downloadclient", {
+        body: {
           enable: true,
           protocol: "torrent",
           name: "qBittorrent",
@@ -104,7 +88,7 @@ export const configure = Effect.fn("Prowlarr.configure")(function* () {
             { name: "host", value: "qbittorrent" },
             { name: "port", value: 6767 },
             { name: "username", value: state.qbUser },
-            { name: "password", value: effectiveQbPass },
+            { name: "password", value: state.qbPass },
             { name: "category", value: "prowlarr" },
             { name: "sequentialOrder", value: true },
             { name: "firstAndLast", value: true },
@@ -113,9 +97,8 @@ export const configure = Effect.fn("Prowlarr.configure")(function* () {
             { name: "priority", value: 1 },
             { name: "contentLayout", value: 0 },
           ],
-        }),
-        "downloadClient",
-      ),
+        },
+      }),
       Effect.catchCause((e) =>
         Console.log(`  Prowlarr download client: ${String(e).slice(0, 120)}`),
       ),

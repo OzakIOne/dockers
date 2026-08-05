@@ -1,118 +1,240 @@
 // @ts-nocheck
-import type * as __TypedOpenapi from "./jellyfin.types.js";
+import type * as __TypedOpenapi from "./radarr.types.js";
 
   import { Effect, Schema, SchemaTransformation } from "effect";
 
 // <DefaultSchemas>
-const Boolean_default_false_prop = Schema.Boolean.pipe(Schema.withDecodingDefaultType(Effect.succeed(false)));
-const Boolean_default_true_prop = Schema.Boolean.pipe(Schema.withDecodingDefaultType(Effect.succeed(true)));
-const NullOr_default_System_prop = Schema.NullOr(Schema.String).pipe(Schema.withDecodingDefaultType(Effect.succeed("System")));
-const NullOr_default_X64_prop = Schema.NullOr(Schema.String).pipe(Schema.withDecodingDefaultType(Effect.succeed("X64")));
+const Union_default_false_prop = Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a }))).pipe(Schema.withDecodingDefaultType(Effect.succeed(false)));
 
 // </DefaultSchemas>
 
 // <Schemas>
-export type DynamicDayOfWeek = __TypedOpenapi.Schemas.DynamicDayOfWeek;
-export const DynamicDayOfWeek = Schema.Literals(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Everyday", "Weekday", "Weekend"]);
+export type ApplyTags = __TypedOpenapi.Schemas.ApplyTags;
+export const ApplyTags = Schema.Literals(["add", "remove", "replace"]);
 
-export type AccessSchedule = __TypedOpenapi.Schemas.AccessSchedule;
-export const AccessSchedule = Schema.Struct({ Id: Schema.optional(Schema.Int), UserId: Schema.optional(Schema.String.check(Schema.isUUID())), DayOfWeek: Schema.optional(DynamicDayOfWeek.check(Schema.makeFilter((value) => Schema.is(Schema.Literals(["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Everyday", "Weekday", "Weekend"]))(value)))), StartHour: Schema.optional(Schema.Number), EndHour: Schema.optional(Schema.Number) });
+export type SelectOption = __TypedOpenapi.Schemas.SelectOption;
+export const SelectOption = Schema.Struct({ value: Schema.optional(Schema.Int), name: Schema.optional(Schema.NullOr(Schema.String)), order: Schema.optional(Schema.Int), hint: Schema.optional(Schema.NullOr(Schema.String)), dividerAfter: Schema.optional(Schema.Boolean) });
 
-export type SubtitlePlaybackMode = __TypedOpenapi.Schemas.SubtitlePlaybackMode;
-export const SubtitlePlaybackMode = Schema.Literals(["Default", "Always", "OnlyForced", "None", "Smart"]);
+export type PrivacyLevel = __TypedOpenapi.Schemas.PrivacyLevel;
+export const PrivacyLevel = Schema.Literals(["normal", "password", "apiKey", "userName"]);
 
-export type UserConfiguration = __TypedOpenapi.Schemas.UserConfiguration;
-export const UserConfiguration = Schema.Struct({ AudioLanguagePreference: Schema.optional(Schema.NullOr(Schema.String)), PlayDefaultAudioTrack: Schema.optional(Schema.Boolean), SubtitleLanguagePreference: Schema.optional(Schema.NullOr(Schema.String)), DisplayMissingEpisodes: Schema.optional(Schema.Boolean), GroupedFolders: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), SubtitleMode: Schema.optional(SubtitlePlaybackMode.check(Schema.makeFilter((value) => Schema.is(Schema.Literals(["Default", "Always", "OnlyForced", "None", "Smart"]))(value)))), DisplayCollectionsView: Schema.optional(Schema.Boolean), EnableLocalPassword: Schema.optional(Schema.Boolean), OrderedViews: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), LatestItemsExcludes: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), MyMediaExcludes: Schema.optional(Schema.Array(Schema.String.check(Schema.isUUID()))), HidePlayedInLatest: Schema.optional(Schema.Boolean), RememberAudioSelections: Schema.optional(Schema.Boolean), RememberSubtitleSelections: Schema.optional(Schema.Boolean), EnableNextEpisodeAutoPlay: Schema.optional(Schema.Boolean), CastReceiverId: Schema.optional(Schema.NullOr(Schema.String)) });
+export type Field = __TypedOpenapi.Schemas.Field;
+export const Field = Schema.Struct({ order: Schema.optional(Schema.Int), name: Schema.optional(Schema.NullOr(Schema.String)), label: Schema.optional(Schema.NullOr(Schema.String)), unit: Schema.optional(Schema.NullOr(Schema.String)), helpText: Schema.optional(Schema.NullOr(Schema.String)), helpTextWarning: Schema.optional(Schema.NullOr(Schema.String)), helpLink: Schema.optional(Schema.NullOr(Schema.String)), value: Schema.optional(Schema.Null), type: Schema.optional(Schema.NullOr(Schema.String)), advanced: Schema.optional(Schema.Boolean), selectOptions: Schema.optional(Schema.NullOr(Schema.Array(SelectOption))), selectOptionsProviderAction: Schema.optional(Schema.NullOr(Schema.String)), section: Schema.optional(Schema.NullOr(Schema.String)), hidden: Schema.optional(Schema.NullOr(Schema.String)), privacy: Schema.optional(PrivacyLevel), placeholder: Schema.optional(Schema.NullOr(Schema.String)), isFloat: Schema.optional(Schema.Boolean) });
 
-export type UnratedItem = __TypedOpenapi.Schemas.UnratedItem;
-export const UnratedItem = Schema.Literals(["Movie", "Trailer", "Series", "Music", "Book", "LiveTvChannel", "LiveTvProgram", "ChannelContent", "Other"]);
+export type DownloadProtocol = __TypedOpenapi.Schemas.DownloadProtocol;
+export const DownloadProtocol = Schema.Literals(["unknown", "usenet", "torrent"]);
 
-export type SyncPlayUserAccessType = __TypedOpenapi.Schemas.SyncPlayUserAccessType;
-export const SyncPlayUserAccessType = Schema.Literals(["CreateAndJoinGroups", "JoinGroups", "None"]);
+export type DownloadClientBulkResource = __TypedOpenapi.Schemas.DownloadClientBulkResource;
+export const DownloadClientBulkResource = Schema.Struct({ ids: Schema.optional(Schema.NullOr(Schema.Array(Schema.Int))), tags: Schema.optional(Schema.NullOr(Schema.Array(Schema.Int))), applyTags: Schema.optional(ApplyTags), enable: Schema.optional(Schema.NullOr(Schema.Boolean)), priority: Schema.optional(Schema.NullOr(Schema.Int)), removeCompletedDownloads: Schema.optional(Schema.NullOr(Schema.Boolean)), removeFailedDownloads: Schema.optional(Schema.NullOr(Schema.Boolean)) });
 
-export type UserPolicy = __TypedOpenapi.Schemas.UserPolicy;
-export const UserPolicy = Schema.Struct({ IsAdministrator: Schema.optional(Schema.Boolean), IsHidden: Schema.optional(Schema.Boolean), EnableCollectionManagement: Boolean_default_false_prop, EnableSubtitleManagement: Boolean_default_false_prop, EnableLyricManagement: Boolean_default_false_prop, IsDisabled: Schema.optional(Schema.Boolean), MaxParentalRating: Schema.optional(Schema.NullOr(Schema.Int)), MaxParentalSubRating: Schema.optional(Schema.NullOr(Schema.Int)), BlockedTags: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), AllowedTags: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), EnableUserPreferenceAccess: Schema.optional(Schema.Boolean), AccessSchedules: Schema.optional(Schema.NullOr(Schema.Array(AccessSchedule))), BlockUnratedItems: Schema.optional(Schema.NullOr(Schema.Array(UnratedItem))), EnableRemoteControlOfOtherUsers: Schema.optional(Schema.Boolean), EnableSharedDeviceControl: Schema.optional(Schema.Boolean), EnableRemoteAccess: Schema.optional(Schema.Boolean), EnableLiveTvManagement: Schema.optional(Schema.Boolean), EnableLiveTvAccess: Schema.optional(Schema.Boolean), EnableMediaPlayback: Schema.optional(Schema.Boolean), EnableAudioPlaybackTranscoding: Schema.optional(Schema.Boolean), EnableVideoPlaybackTranscoding: Schema.optional(Schema.Boolean), EnablePlaybackRemuxing: Schema.optional(Schema.Boolean), ForceRemoteSourceTranscoding: Schema.optional(Schema.Boolean), EnableContentDeletion: Schema.optional(Schema.Boolean), EnableContentDeletionFromFolders: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), EnableContentDownloading: Schema.optional(Schema.Boolean), EnableSyncTranscoding: Schema.optional(Schema.Boolean), EnableMediaConversion: Schema.optional(Schema.Boolean), EnabledDevices: Schema.optional(Schema.NullOr(Schema.Array(Schema.String))), EnableAllDevices: Schema.optional(Schema.Boolean), EnabledChannels: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), EnableAllChannels: Schema.optional(Schema.Boolean), EnabledFolders: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), EnableAllFolders: Schema.optional(Schema.Boolean), InvalidLoginAttemptCount: Schema.optional(Schema.Int), LoginAttemptsBeforeLockout: Schema.optional(Schema.Int), MaxActiveSessions: Schema.optional(Schema.Int), EnablePublicSharing: Schema.optional(Schema.Boolean), BlockedMediaFolders: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), BlockedChannels: Schema.optional(Schema.NullOr(Schema.Array(Schema.String.check(Schema.isUUID())))), RemoteClientBitrateLimit: Schema.optional(Schema.Int), AuthenticationProviderId: Schema.String.check(Schema.isMinLength(1)), PasswordResetProviderId: Schema.String.check(Schema.isMinLength(1)), SyncPlayAccess: Schema.optional(SyncPlayUserAccessType.check(Schema.makeFilter((value) => Schema.is(Schema.Literals(["CreateAndJoinGroups", "JoinGroups", "None"]))(value)))) });
+export type ProviderMessageType = __TypedOpenapi.Schemas.ProviderMessageType;
+export const ProviderMessageType = Schema.Literals(["info", "warning", "error"]);
 
-export type UserDto = __TypedOpenapi.Schemas.UserDto;
-export const UserDto = Schema.Struct({ Name: Schema.optional(Schema.NullOr(Schema.String)), ServerId: Schema.optional(Schema.NullOr(Schema.String)), ServerName: Schema.optional(Schema.NullOr(Schema.String)), Id: Schema.optional(Schema.String.check(Schema.isUUID())), PrimaryImageTag: Schema.optional(Schema.NullOr(Schema.String)), HasPassword: Schema.optional(Schema.NullOr(Schema.Boolean)), HasConfiguredPassword: Schema.optional(Schema.NullOr(Schema.Boolean)), HasConfiguredEasyPassword: Schema.optional(Schema.NullOr(Schema.Boolean)), EnableAutoLogin: Schema.optional(Schema.NullOr(Schema.Boolean)), LastLoginDate: Schema.optional(Schema.NullOr(Schema.String)), LastActivityDate: Schema.optional(Schema.NullOr(Schema.String)), Configuration: Schema.optional(Schema.NullOr(UserConfiguration)), Policy: Schema.optional(Schema.NullOr(UserPolicy)), PrimaryImageAspectRatio: Schema.optional(Schema.NullOr(Schema.Number)) });
+export type ProviderMessage = __TypedOpenapi.Schemas.ProviderMessage;
+export const ProviderMessage = Schema.Struct({ message: Schema.optional(Schema.NullOr(Schema.String)), type: Schema.optional(ProviderMessageType) });
 
-export type CastReceiverApplication = __TypedOpenapi.Schemas.CastReceiverApplication;
-export const CastReceiverApplication = Schema.Struct({ Id: Schema.String, Name: Schema.String });
+export type DownloadClientResource = __TypedOpenapi.Schemas.DownloadClientResource;
+export const DownloadClientResource = Schema.suspend(() => Schema.Struct({ id: Schema.optional(Schema.Int), name: Schema.optional(Schema.NullOr(Schema.String)), fields: Schema.optional(Schema.NullOr(Schema.Array(Field))), implementationName: Schema.optional(Schema.NullOr(Schema.String)), implementation: Schema.optional(Schema.NullOr(Schema.String)), configContract: Schema.optional(Schema.NullOr(Schema.String)), infoLink: Schema.optional(Schema.NullOr(Schema.String)), message: Schema.optional(ProviderMessage), tags: Schema.optional(Schema.NullOr(Schema.Array(Schema.Int).check(Schema.isUnique()))), presets: Schema.optional(Schema.NullOr(Schema.Array(DownloadClientResource))), enable: Schema.optional(Schema.Boolean), protocol: Schema.optional(DownloadProtocol), priority: Schema.optional(Schema.Int), removeCompletedDownloads: Schema.optional(Schema.Boolean), removeFailedDownloads: Schema.optional(Schema.Boolean) }));
 
-export type VersionInfo = __TypedOpenapi.Schemas.VersionInfo;
-export const VersionInfo = Schema.Struct({ version: Schema.optional(Schema.String), VersionNumber: Schema.optional(Schema.String), changelog: Schema.optional(Schema.NullOr(Schema.String)), targetAbi: Schema.optional(Schema.NullOr(Schema.String)), sourceUrl: Schema.optional(Schema.NullOr(Schema.String)), checksum: Schema.optional(Schema.NullOr(Schema.String)), timestamp: Schema.optional(Schema.NullOr(Schema.String)), repositoryName: Schema.optional(Schema.String), repositoryUrl: Schema.optional(Schema.String) });
+export type FileDateType = __TypedOpenapi.Schemas.FileDateType;
+export const FileDateType = Schema.Literals(["none", "cinemas", "release"]);
 
-export type PackageInfo = __TypedOpenapi.Schemas.PackageInfo;
-export const PackageInfo = Schema.Struct({ name: Schema.optional(Schema.String), description: Schema.optional(Schema.String), overview: Schema.optional(Schema.String), owner: Schema.optional(Schema.String), category: Schema.optional(Schema.String), guid: Schema.optional(Schema.String.check(Schema.isUUID())), versions: Schema.optional(Schema.Array(VersionInfo)), imageUrl: Schema.optional(Schema.NullOr(Schema.String)) });
+export type ProperDownloadTypes = __TypedOpenapi.Schemas.ProperDownloadTypes;
+export const ProperDownloadTypes = Schema.Literals(["preferAndUpgrade", "doNotUpgrade", "doNotPrefer"]);
 
-export type InstallationInfo = __TypedOpenapi.Schemas.InstallationInfo;
-export const InstallationInfo = Schema.Struct({ Guid: Schema.optional(Schema.String.check(Schema.isUUID())), Name: Schema.optional(Schema.NullOr(Schema.String)), Version: Schema.optional(Schema.NullOr(Schema.String)), Changelog: Schema.optional(Schema.NullOr(Schema.String)), SourceUrl: Schema.optional(Schema.NullOr(Schema.String)), Checksum: Schema.optional(Schema.NullOr(Schema.String)), PackageInfo: Schema.optional(Schema.NullOr(PackageInfo)) });
+export type RescanAfterRefreshType = __TypedOpenapi.Schemas.RescanAfterRefreshType;
+export const RescanAfterRefreshType = Schema.Literals(["always", "afterManual", "never"]);
 
-export type ProblemDetails = __TypedOpenapi.Schemas.ProblemDetails;
-export const ProblemDetails = Schema.StructWithRest(Schema.Struct({ type: Schema.optional(Schema.NullOr(Schema.String)), title: Schema.optional(Schema.NullOr(Schema.String)), status: Schema.optional(Schema.NullOr(Schema.Int)), detail: Schema.optional(Schema.NullOr(Schema.String)), instance: Schema.optional(Schema.NullOr(Schema.String)) }), [Schema.Record(Schema.String, Schema.Unknown)]);
+export type MediaManagementConfigResource = __TypedOpenapi.Schemas.MediaManagementConfigResource;
+export const MediaManagementConfigResource = Schema.Struct({ id: Schema.optional(Schema.Int), autoUnmonitorPreviouslyDownloadedMovies: Schema.optional(Schema.Boolean), recycleBin: Schema.optional(Schema.NullOr(Schema.String)), recycleBinCleanupDays: Schema.optional(Schema.Int), downloadPropersAndRepacks: Schema.optional(ProperDownloadTypes), createEmptyMovieFolders: Schema.optional(Schema.Boolean), deleteEmptyFolders: Schema.optional(Schema.Boolean), fileDate: Schema.optional(FileDateType), rescanAfterRefresh: Schema.optional(RescanAfterRefreshType), autoRenameFolders: Schema.optional(Schema.Boolean), pathsDefaultStatic: Schema.optional(Schema.Boolean), setPermissionsLinux: Schema.optional(Schema.Boolean), chmodFolder: Schema.optional(Schema.NullOr(Schema.String)), chownGroup: Schema.optional(Schema.NullOr(Schema.String)), skipFreeSpaceCheckWhenImporting: Schema.optional(Schema.Boolean), minimumFreeSpaceWhenImporting: Schema.optional(Schema.Int), copyUsingHardlinks: Schema.optional(Schema.Boolean), useScriptImport: Schema.optional(Schema.Boolean), scriptImportPath: Schema.optional(Schema.NullOr(Schema.String)), importExtraFiles: Schema.optional(Schema.Boolean), extraFileExtensions: Schema.optional(Schema.NullOr(Schema.String)), enableMediaInfo: Schema.optional(Schema.Boolean) });
 
-export type RepositoryInfo = __TypedOpenapi.Schemas.RepositoryInfo;
-export const RepositoryInfo = Schema.Struct({ Name: Schema.optional(Schema.NullOr(Schema.String)), Url: Schema.optional(Schema.NullOr(Schema.String)), Enabled: Schema.optional(Schema.Boolean) });
+export type UnmappedFolder = __TypedOpenapi.Schemas.UnmappedFolder;
+export const UnmappedFolder = Schema.Struct({ name: Schema.optional(Schema.NullOr(Schema.String)), path: Schema.optional(Schema.NullOr(Schema.String)), relativePath: Schema.optional(Schema.NullOr(Schema.String)) });
 
-export type SystemInfo = __TypedOpenapi.Schemas.SystemInfo;
-export const SystemInfo = Schema.Struct({ LocalAddress: Schema.optional(Schema.NullOr(Schema.String)), ServerName: Schema.optional(Schema.NullOr(Schema.String)), Version: Schema.optional(Schema.NullOr(Schema.String)), ProductName: Schema.optional(Schema.NullOr(Schema.String)), OperatingSystem: Schema.optional(Schema.NullOr(Schema.String)), Id: Schema.optional(Schema.NullOr(Schema.String)), StartupWizardCompleted: Schema.optional(Schema.NullOr(Schema.Boolean)), OperatingSystemDisplayName: Schema.optional(Schema.NullOr(Schema.String)), PackageName: Schema.optional(Schema.NullOr(Schema.String)), HasPendingRestart: Schema.optional(Schema.Boolean), IsShuttingDown: Schema.optional(Schema.Boolean), SupportsLibraryMonitor: Schema.optional(Schema.Boolean), WebSocketPortNumber: Schema.optional(Schema.Int), CompletedInstallations: Schema.optional(Schema.NullOr(Schema.Array(InstallationInfo))), CanSelfRestart: Boolean_default_true_prop, CanLaunchWebBrowser: Boolean_default_false_prop, ProgramDataPath: Schema.optional(Schema.NullOr(Schema.String)), WebPath: Schema.optional(Schema.NullOr(Schema.String)), ItemsByNamePath: Schema.optional(Schema.NullOr(Schema.String)), CachePath: Schema.optional(Schema.NullOr(Schema.String)), LogPath: Schema.optional(Schema.NullOr(Schema.String)), InternalMetadataPath: Schema.optional(Schema.NullOr(Schema.String)), TranscodingTempPath: Schema.optional(Schema.NullOr(Schema.String)), CastReceiverApplications: Schema.optional(Schema.NullOr(Schema.Array(CastReceiverApplication))), HasUpdateAvailable: Boolean_default_false_prop, EncoderLocation: NullOr_default_System_prop, SystemArchitecture: NullOr_default_X64_prop });
+export type RootFolderResource = __TypedOpenapi.Schemas.RootFolderResource;
+export const RootFolderResource = Schema.Struct({ id: Schema.optional(Schema.Int), path: Schema.optional(Schema.NullOr(Schema.String)), accessible: Schema.optional(Schema.Boolean), freeSpace: Schema.optional(Schema.NullOr(Schema.Int)), unmappedFolders: Schema.optional(Schema.NullOr(Schema.Array(UnmappedFolder))) });
 
 // </Schemas>
 
 // <Endpoints>
-export type post_InstallPackage = __TypedOpenapi.Endpoints.post_InstallPackage;
-export const post_InstallPackage = {
-  method: Schema.Literal("POST"),
-  path: Schema.Literal("/Packages/Installed/{name}"),
-  requestFormat: Schema.Literal("json"),
-  responseFormat: Schema.Literal("json"),
-  parameters: { query: Schema.optional(Schema.Struct({ assemblyGuid: Schema.optional(Schema.String.check(Schema.isUUID())), version: Schema.optional(Schema.String), repositoryUrl: Schema.optional(Schema.String) })), path: Schema.Struct({ name: Schema.String }) },
-  responses: { 204: Schema.Unknown, 401: Schema.Unknown, 403: Schema.Unknown, 404: Schema.Union([ProblemDetails, ProblemDetails, ProblemDetails]), 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
-};
-
-export type get_GetRepositories = __TypedOpenapi.Endpoints.get_GetRepositories;
-export const get_GetRepositories = {
+export type get__api_v3_downloadclient = __TypedOpenapi.Endpoints.get__api_v3_downloadclient;
+export const get__api_v3_downloadclient = {
   method: Schema.Literal("GET"),
-  path: Schema.Literal("/Repositories"),
+  path: Schema.Literal("/api/v3/downloadclient"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
   parameters: Schema.Never,
-  responses: { 200: Schema.Union([Schema.Array(RepositoryInfo), Schema.Array(RepositoryInfo), Schema.Array(RepositoryInfo)]), 401: Schema.Unknown, 403: Schema.Unknown, 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  responses: { 200: Schema.Array(DownloadClientResource) },
 };
 
-export type post_SetRepositories = __TypedOpenapi.Endpoints.post_SetRepositories;
-export const post_SetRepositories = {
+export type post__api_v3_downloadclient = __TypedOpenapi.Endpoints.post__api_v3_downloadclient;
+export const post__api_v3_downloadclient = {
   method: Schema.Literal("POST"),
-  path: Schema.Literal("/Repositories"),
+  path: Schema.Literal("/api/v3/downloadclient"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
-  parameters: { body: Schema.Array(RepositoryInfo) },
-  responses: { 204: Schema.Unknown, 401: Schema.Unknown, 403: Schema.Unknown, 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  parameters: { query: Schema.optional(Schema.Struct({ forceSave: Union_default_false_prop })), body: DownloadClientResource },
+  responses: { 200: DownloadClientResource },
 };
 
-export type get_GetSystemInfo = __TypedOpenapi.Endpoints.get_GetSystemInfo;
-export const get_GetSystemInfo = {
+export type put__api_v3_downloadclient_Id = __TypedOpenapi.Endpoints.put__api_v3_downloadclient_Id;
+export const put__api_v3_downloadclient_Id = {
+  method: Schema.Literal("PUT"),
+  path: Schema.Literal("/api/v3/downloadclient/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { query: Schema.optional(Schema.Struct({ forceSave: Union_default_false_prop })), path: Schema.Struct({ id: Schema.NumberFromString.check(Schema.isInt()) }), body: DownloadClientResource },
+  responses: { 200: DownloadClientResource },
+};
+
+export type delete__api_v3_downloadclient_Id = __TypedOpenapi.Endpoints.delete__api_v3_downloadclient_Id;
+export const delete__api_v3_downloadclient_Id = {
+  method: Schema.Literal("DELETE"),
+  path: Schema.Literal("/api/v3/downloadclient/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ id: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: Schema.Unknown },
+};
+
+export type get__api_v3_downloadclient_Id = __TypedOpenapi.Endpoints.get__api_v3_downloadclient_Id;
+export const get__api_v3_downloadclient_Id = {
   method: Schema.Literal("GET"),
-  path: Schema.Literal("/System/Info"),
+  path: Schema.Literal("/api/v3/downloadclient/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ id: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: DownloadClientResource },
+};
+
+export type put__api_v3_downloadclient_bulk = __TypedOpenapi.Endpoints.put__api_v3_downloadclient_bulk;
+export const put__api_v3_downloadclient_bulk = {
+  method: Schema.Literal("PUT"),
+  path: Schema.Literal("/api/v3/downloadclient/bulk"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { body: DownloadClientBulkResource },
+  responses: { 200: DownloadClientResource },
+};
+
+export type delete__api_v3_downloadclient_bulk = __TypedOpenapi.Endpoints.delete__api_v3_downloadclient_bulk;
+export const delete__api_v3_downloadclient_bulk = {
+  method: Schema.Literal("DELETE"),
+  path: Schema.Literal("/api/v3/downloadclient/bulk"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { body: DownloadClientBulkResource },
+  responses: { 200: Schema.Unknown },
+};
+
+export type get__api_v3_downloadclient_schema = __TypedOpenapi.Endpoints.get__api_v3_downloadclient_schema;
+export const get__api_v3_downloadclient_schema = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/api/v3/downloadclient/schema"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
   parameters: Schema.Never,
-  responses: { 200: Schema.Union([SystemInfo, SystemInfo, SystemInfo]), 401: Schema.Unknown, 403: Schema.Union([ProblemDetails, ProblemDetails, ProblemDetails]), 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  responses: { 200: Schema.Array(DownloadClientResource) },
 };
 
-export type get_GetUsers = __TypedOpenapi.Endpoints.get_GetUsers;
-export const get_GetUsers = {
-  method: Schema.Literal("GET"),
-  path: Schema.Literal("/Users"),
+export type post__api_v3_downloadclient_test = __TypedOpenapi.Endpoints.post__api_v3_downloadclient_test;
+export const post__api_v3_downloadclient_test = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/api/v3/downloadclient/test"),
   requestFormat: Schema.Literal("json"),
   responseFormat: Schema.Literal("json"),
-  parameters: { query: Schema.optional(Schema.Struct({ isHidden: Schema.optional(Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a })))), isDisabled: Schema.optional(Schema.Union([Schema.Boolean, Schema.String, Schema.Number]).pipe(Schema.decodeTo(Schema.Boolean, SchemaTransformation.transform({ decode: (x) => x === true || x === "true" || x === 1 || x === "1", encode: (a) => a })))) })) },
-  responses: { 200: Schema.Union([Schema.Array(UserDto), Schema.Array(UserDto), Schema.Array(UserDto)]), 401: Schema.Unknown, 403: Schema.Unknown, 503: Schema.Unknown },
-  responseHeaders: { 503: Schema.Struct({ "Retry-After": Schema.Int, Message: Schema.String }) },
+  parameters: { query: Schema.optional(Schema.Struct({ forceTest: Union_default_false_prop })), body: DownloadClientResource },
+  responses: { 200: Schema.Unknown },
+};
+
+export type post__api_v3_downloadclient_testall = __TypedOpenapi.Endpoints.post__api_v3_downloadclient_testall;
+export const post__api_v3_downloadclient_testall = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/api/v3/downloadclient/testall"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: Schema.Never,
+  responses: { 200: Schema.Unknown },
+};
+
+export type post__api_v3_downloadclient_action_Name = __TypedOpenapi.Endpoints.post__api_v3_downloadclient_action_Name;
+export const post__api_v3_downloadclient_action_Name = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/api/v3/downloadclient/action/{name}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ name: Schema.String }), body: DownloadClientResource },
+  responses: { 200: Schema.Unknown },
+};
+
+export type get__api_v3_config_mediamanagement = __TypedOpenapi.Endpoints.get__api_v3_config_mediamanagement;
+export const get__api_v3_config_mediamanagement = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/api/v3/config/mediamanagement"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: Schema.Never,
+  responses: { 200: MediaManagementConfigResource },
+};
+
+export type put__api_v3_config_mediamanagement_Id = __TypedOpenapi.Endpoints.put__api_v3_config_mediamanagement_Id;
+export const put__api_v3_config_mediamanagement_Id = {
+  method: Schema.Literal("PUT"),
+  path: Schema.Literal("/api/v3/config/mediamanagement/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ id: Schema.String }), body: MediaManagementConfigResource },
+  responses: { 200: MediaManagementConfigResource },
+};
+
+export type get__api_v3_config_mediamanagement_Id = __TypedOpenapi.Endpoints.get__api_v3_config_mediamanagement_Id;
+export const get__api_v3_config_mediamanagement_Id = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/api/v3/config/mediamanagement/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ id: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: MediaManagementConfigResource },
+};
+
+export type post__api_v3_rootfolder = __TypedOpenapi.Endpoints.post__api_v3_rootfolder;
+export const post__api_v3_rootfolder = {
+  method: Schema.Literal("POST"),
+  path: Schema.Literal("/api/v3/rootfolder"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { body: RootFolderResource },
+  responses: { 200: RootFolderResource },
+};
+
+export type get__api_v3_rootfolder = __TypedOpenapi.Endpoints.get__api_v3_rootfolder;
+export const get__api_v3_rootfolder = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/api/v3/rootfolder"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: Schema.Never,
+  responses: { 200: Schema.Array(RootFolderResource) },
+};
+
+export type delete__api_v3_rootfolder_Id = __TypedOpenapi.Endpoints.delete__api_v3_rootfolder_Id;
+export const delete__api_v3_rootfolder_Id = {
+  method: Schema.Literal("DELETE"),
+  path: Schema.Literal("/api/v3/rootfolder/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ id: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: Schema.Unknown },
+};
+
+export type get__api_v3_rootfolder_Id = __TypedOpenapi.Endpoints.get__api_v3_rootfolder_Id;
+export const get__api_v3_rootfolder_Id = {
+  method: Schema.Literal("GET"),
+  path: Schema.Literal("/api/v3/rootfolder/{id}"),
+  requestFormat: Schema.Literal("json"),
+  responseFormat: Schema.Literal("json"),
+  parameters: { path: Schema.Struct({ id: Schema.NumberFromString.check(Schema.isInt()) }) },
+  responses: { 200: RootFolderResource },
 };
 
 // </Endpoints>
@@ -120,14 +242,31 @@ export const get_GetUsers = {
   
      // <EndpointByMethod>
      export const EndpointByMethod: __TypedOpenapi.EndpointByMethod = {
-     post: {
-           "/Packages/Installed/{name}": post_InstallPackage as any,
-"/Repositories": post_SetRepositories as any
+     get: {
+           "/api/v3/downloadclient": get__api_v3_downloadclient as any,
+"/api/v3/downloadclient/{id}": get__api_v3_downloadclient_Id as any,
+"/api/v3/downloadclient/schema": get__api_v3_downloadclient_schema as any,
+"/api/v3/config/mediamanagement": get__api_v3_config_mediamanagement as any,
+"/api/v3/config/mediamanagement/{id}": get__api_v3_config_mediamanagement_Id as any,
+"/api/v3/rootfolder": get__api_v3_rootfolder as any,
+"/api/v3/rootfolder/{id}": get__api_v3_rootfolder_Id as any
          },
-get: {
-           "/Repositories": get_GetRepositories as any,
-"/System/Info": get_GetSystemInfo as any,
-"/Users": get_GetUsers as any
+post: {
+           "/api/v3/downloadclient": post__api_v3_downloadclient as any,
+"/api/v3/downloadclient/test": post__api_v3_downloadclient_test as any,
+"/api/v3/downloadclient/testall": post__api_v3_downloadclient_testall as any,
+"/api/v3/downloadclient/action/{name}": post__api_v3_downloadclient_action_Name as any,
+"/api/v3/rootfolder": post__api_v3_rootfolder as any
+         },
+put: {
+           "/api/v3/downloadclient/{id}": put__api_v3_downloadclient_Id as any,
+"/api/v3/downloadclient/bulk": put__api_v3_downloadclient_bulk as any,
+"/api/v3/config/mediamanagement/{id}": put__api_v3_config_mediamanagement_Id as any
+         },
+delete: {
+           "/api/v3/downloadclient/{id}": delete__api_v3_downloadclient_Id as any,
+"/api/v3/downloadclient/bulk": delete__api_v3_downloadclient_bulk as any,
+"/api/v3/rootfolder/{id}": delete__api_v3_rootfolder_Id as any
          }
      }
      export type EndpointByMethod = __TypedOpenapi.EndpointByMethod;
@@ -135,8 +274,10 @@ get: {
      
 
     // <EndpointByMethod.Shorthands>
-    export type PostEndpoints = EndpointByMethod["post"]
-export type GetEndpoints = EndpointByMethod["get"]
+    export type GetEndpoints = EndpointByMethod["get"]
+export type PostEndpoints = EndpointByMethod["post"]
+export type PutEndpoints = EndpointByMethod["put"]
+export type DeleteEndpoints = EndpointByMethod["delete"]
     // </EndpointByMethod.Shorthands>
     
   
@@ -175,7 +316,7 @@ export type SecurityRequirements = readonly (readonly string[])[];
 
     // <EndpointSecurityRequirements>
     /** OpenAPI security requirements applied when an endpoint has no explicit entry. */
-    export const defaultSecurityRequirements = [["CustomAuthentication"]] as SecurityRequirements;
+    export const defaultSecurityRequirements = [["X-Api-Key"],["apikey"]] as SecurityRequirements;
     /** Endpoint-specific security requirements that differ from the default. */
     export const endpointSecurityRequirements = {
     
@@ -466,7 +607,7 @@ export class EffectApiClient {
   baseUrl: string = "";
   successStatusCodes = successStatusCodes;
   errorStatusCodes = errorStatusCodes;
-  validate: ValidateSide = "both";
+  validate: ValidateSide = "none";
   onValidate?: OnValidate;
   private effectFetcher: EffectFetcher;
 
@@ -678,7 +819,17 @@ export class EffectApiClient {
     });
   }
 
-  post<Path extends keyof PostEndpoints, TEndpoint extends PostEndpoints[Path]>(
+  get<Path extends keyof GetEndpoints, TEndpoint extends GetEndpoints[Path]>(
+    path: Path,
+    ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
+  ): Effect.Effect<
+    InferSuccessData<TEndpoint>,
+    TypedStatusError | HttpClientError,
+    never
+  > {
+    return this.request<"get", Path, GetEndpoints[Path]>("get", path, ...params);
+  }
+post<Path extends keyof PostEndpoints, TEndpoint extends PostEndpoints[Path]>(
     path: Path,
     ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
   ): Effect.Effect<
@@ -688,7 +839,7 @@ export class EffectApiClient {
   > {
     return this.request<"post", Path, PostEndpoints[Path]>("post", path, ...params);
   }
-get<Path extends keyof GetEndpoints, TEndpoint extends GetEndpoints[Path]>(
+put<Path extends keyof PutEndpoints, TEndpoint extends PutEndpoints[Path]>(
     path: Path,
     ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
   ): Effect.Effect<
@@ -696,7 +847,17 @@ get<Path extends keyof GetEndpoints, TEndpoint extends GetEndpoints[Path]>(
     TypedStatusError | HttpClientError,
     never
   > {
-    return this.request<"get", Path, GetEndpoints[Path]>("get", path, ...params);
+    return this.request<"put", Path, PutEndpoints[Path]>("put", path, ...params);
+  }
+delete<Path extends keyof DeleteEndpoints, TEndpoint extends DeleteEndpoints[Path]>(
+    path: Path,
+    ...params: MaybeOptionalArg<ApiCallParams<TEndpoint>>
+  ): Effect.Effect<
+    InferSuccessData<TEndpoint>,
+    TypedStatusError | HttpClientError,
+    never
+  > {
+    return this.request<"delete", Path, DeleteEndpoints[Path]>("delete", path, ...params);
   }
 }
 
